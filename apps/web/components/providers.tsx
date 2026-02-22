@@ -1,6 +1,6 @@
 "use client";
 
-import * as React from 'react';
+import * as React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { Toaster } from "@repo/ui/components/sonner";
@@ -29,7 +29,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const queryClient = getQueryClient();
 
   return (
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
       <NextThemesProvider
         attribute="class"
         defaultTheme="system"
@@ -40,6 +40,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         {children}
         <Toaster />
       </NextThemesProvider>
-      </QueryClientProvider>
-    );
+    </QueryClientProvider>
+  );
 }
