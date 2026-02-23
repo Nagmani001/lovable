@@ -46,10 +46,6 @@ app.get("/error", (req: Request, res: Response) => {
 export let server: Server;
 
 async function main() {
-  server = app.listen(process.env.PORT, () => {
-    console.log(`server running on port ${process.env.PORT}`);
-  });
-
   if (process.env.RESEND_API_KEY) {
     initEmail({
       resendApiKey: process.env.RESEND_API_KEY,
@@ -64,6 +60,10 @@ async function main() {
       },
     });
   }
+
+  server = app.listen(process.env.PORT, () => {
+    console.log(`server running on port ${process.env.PORT}`);
+  });
 }
 main();
 

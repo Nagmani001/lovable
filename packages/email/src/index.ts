@@ -41,7 +41,8 @@ export async function sendEmail(options: ResendEmailOptions) {
       transporter,
     });
   }
-  console.log("errow seding email , neither smpt nor resend is configured");
+
+  throw new Error("error seding email , neither smpt nor resend is configured");
 }
 
 /*

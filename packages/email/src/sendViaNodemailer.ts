@@ -1,4 +1,3 @@
-import { createTransport } from "nodemailer";
 import { render, pretty } from "@react-email/render";
 import { NodemailerInput } from "./resend/types";
 

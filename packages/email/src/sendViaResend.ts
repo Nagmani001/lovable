@@ -12,12 +12,14 @@ export default async function sendEmailViaResend(
       subject: options.subject!,
       react: options.react,
     });
+    return { data, error };
   } else if (options.html) {
     const { data, error } = await resend!.emails.send({
       from: options.from || "noreply@example.com",
       to: options.to,
       subject: options.subject!,
-      react: options.react,
+      react: options.html,
     });
+    return { data, error };
   }
 }
