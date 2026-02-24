@@ -1,109 +1,20 @@
-const techs = [
-  {
-    name: "Turborepo",
-    url: "https://turbo.build",
-    icon: '<svg viewBox="0 0 120 120" fill="none"><defs><linearGradient id="turbo-g" x1="80" y1="0" x2="40" y2="120" gradientUnits="userSpaceOnUse"><stop stop-color="#0096FF"/><stop offset="1" stop-color="#FF0080"/></linearGradient></defs><path d="M60 6A54 54 0 1 1 16 97" stroke="url(#turbo-g)" stroke-width="12" stroke-linecap="round" fill="none"/><circle cx="60" cy="60" r="30" fill="#111"/><circle cx="60" cy="60" r="14" fill="white"/></svg>',
-  },
-  {
-    name: "Next.js",
-    url: "https://nextjs.org",
-    icon: '<svg viewBox="0 0 180 180" fill="none"><mask id="a" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="0" width="180" height="180"><circle cx="90" cy="90" r="90" fill="black"/></mask><g mask="url(#a)"><circle cx="90" cy="90" r="87" fill="black" stroke="white" stroke-width="6"/><path d="M149.508 157.52L69.142 54H54v71.97h12.114V69.384l73.885 95.461a90.304 90.304 0 009.509-7.325Z" fill="url(#b)"/><path d="M115 54h12v72h-12z" fill="url(#c)"/></g><defs><linearGradient id="b" x1="109" y1="116.5" x2="144.5" y2="160.5" gradientUnits="userSpaceOnUse"><stop stop-color="white"/><stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient><linearGradient id="c" x1="121" y1="54" x2="120.799" y2="106.875" gradientUnits="userSpaceOnUse"><stop stop-color="white"/><stop offset="1" stop-color="white" stop-opacity="0"/></linearGradient></defs></svg>',
-  },
-  {
-    name: "React",
-    url: "https://react.dev",
-    icon: '<svg viewBox="-11.5 -10.23 23 20.46" fill="none"><circle r="2.05" fill="#61dafb"/><g stroke="#61dafb" fill="none"><ellipse rx="11" ry="4.2"/><ellipse rx="11" ry="4.2" transform="rotate(60)"/><ellipse rx="11" ry="4.2" transform="rotate(120)"/></g></svg>',
-  },
-  {
-    name: "TypeScript",
-    url: "https://typescriptlang.org",
-    icon: '<svg viewBox="0 0 128 128" fill="none"><rect width="128" height="128" rx="8" fill="#3178c6"/><path d="M82.8 89.2c2.1 3.6 5.3 6.3 10.7 6.3 4.5 0 7.4-2.2 7.4-5.3 0-3.7-3-5-8-7.2l-2.7-1.2c-7.9-3.4-13.2-7.6-13.2-16.5 0-8.2 6.3-14.5 16-14.5 7 0 12 2.4 15.6 8.8l-8.5 5.5c-1.9-3.4-3.9-4.7-7.1-4.7-3.2 0-5.3 2.1-5.3 4.7 0 3.3 2.1 4.7 6.8 6.7l2.7 1.2c9.4 4 14.6 8.1 14.6 17.3 0 9.9-7.8 15.3-18.2 15.3-10.2 0-16.8-4.9-20-11.2l8.8-5.1ZM49.6 57.2h-12v-9.4H76v9.4H63.7v48h-14v-48Z" fill="white"/></svg>',
-  },
-  {
-    name: "Tailwind CSS",
-    url: "https://tailwindcss.com",
-    icon: '<svg viewBox="0 0 54 33" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M27 0c-7.2 0-11.7 3.6-13.5 10.8 2.7-3.6 5.85-4.95 9.45-4.05 2.054.514 3.522 2.004 5.147 3.653C30.744 13.09 33.808 16.2 40.5 16.2c7.2 0 11.7-3.6 13.5-10.8-2.7 3.6-5.85 4.95-9.45 4.05-2.054-.514-3.522-2.004-5.147-3.653C36.756 3.11 33.692 0 27 0ZM13.5 16.2C6.3 16.2 1.8 19.8 0 27c2.7-3.6 5.85-4.95 9.45-4.05 2.054.514 3.522 2.004 5.147 3.653C17.244 29.29 20.308 32.4 27 32.4c7.2 0 11.7-3.6 13.5-10.8-2.7 3.6-5.85 4.95-9.45 4.05-2.054-.514-3.522-2.004-5.147-3.653C23.256 19.31 20.192 16.2 13.5 16.2Z" fill="#06B6D4"/></svg>',
-  },
-  {
-    name: "shadcn/ui",
-    url: "https://ui.shadcn.com",
-    icon: '<svg viewBox="0 0 256 256" fill="none"><line x1="208" y1="128" x2="128" y2="208" stroke="currentColor" stroke-width="24" stroke-linecap="round"/><line x1="192" y1="40" x2="40" y2="192" stroke="currentColor" stroke-width="24" stroke-linecap="round"/></svg>',
-  },
-  {
-    name: "React Query",
-    url: "https://tanstack.com/query",
-    icon: '<svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="12" rx="11" ry="4.2" fill="#FF4154"/><ellipse cx="12" cy="12" rx="11" ry="4.2" fill="#FF4154" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="11" ry="4.2" fill="#FF4154" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="3" fill="#002B3B"/><circle cx="12" cy="12" r="2" fill="#FFD94C"/><circle cx="12" cy="12" r="1" fill="#002B3B"/><circle cx="12" cy="12" r="0.4" fill="#FFD94C"/></svg>',
-  },
-  {
-    name: "Jotai",
-    url: "https://jotai.org",
-    icon: '<svg viewBox="0 0 100 100" fill="none"><circle cx="50" cy="50" r="45" stroke="currentColor" stroke-width="4" fill="none"/><circle cx="50" cy="35" r="8" fill="currentColor"/><circle cx="35" cy="60" r="6" fill="currentColor" opacity="0.6"/><circle cx="65" cy="60" r="6" fill="currentColor" opacity="0.6"/></svg>',
-  },
-  {
-    name: "Prisma",
-    url: "https://prisma.io",
-    icon: '<svg viewBox="0 0 24 24" fill="none"><path d="M21.8068 18.2848L13.5528.7565c-.207-.4382-.639-.7273-1.1286-.7541-.5023-.0293-.9523.213-1.2062.6253L2.266 15.1271c-.2773.4518-.2718 1.0091.0158 1.4555l4.3759 6.7786c.2608.4046.7127.6388 1.1823.6388.1332 0 .267-.0188.3987-.0577l12.7019-3.7568c.3891-.1151.7072-.3904.8737-.7553s.1633-.7828-.0075-1.1454zm-1.8481.7519L9.1814 22.2242c-.3292.0975-.6448-.1873-.5756-.5194l3.8501-18.4386c.072-.3448.5486-.3996.699-.0803l7.1288 15.138c.1344.2856-.019.6224-.325.7128z" fill="currentColor"/></svg>',
-  },
-  {
-    name: "Resend",
-    url: "https://resend.com",
-    icon: '<svg viewBox="0 0 24 24" fill="none"><path d="M14.679 0c4.648 0 7.413 2.765 7.413 6.434s-2.765 6.434-7.413 6.434H12.33L24 24h-8.245l-8.88-8.44c-.636-.588-.93-1.273-.93-1.86 0-.831.587-1.565 1.713-1.883l4.574-1.224c1.737-.465 2.936-1.81 2.936-3.572 0-2.153-1.761-3.4-3.939-3.4H0V0z" fill="currentColor"/></svg>',
-  },
-  {
-    name: "MailHog",
-    url: "https://github.com/mailhog/MailHog",
-    icon: "data:image/png;base64,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",
-  },
-  {
-    name: "Express",
-    url: "https://expressjs.com",
-    icon: '<svg viewBox="0 0 24 24" fill="none"><path d="M24 18.588a1.529 1.529 0 01-1.895-.72l-3.45-4.771-.5-.667-4.003 5.444a1.466 1.466 0 01-1.802.708l5.158-6.92-4.798-6.251a1.595 1.595 0 011.9.666l3.576 4.83 3.596-4.81a1.435 1.435 0 011.788-.668L21.708 7.9l-2.522 3.283a.666.666 0 000 .994l4.804 6.412zM.002 11.576l.42-2.075c1.154-4.103 5.858-5.81 9.094-3.27 1.895 1.489 2.368 3.597 2.275 5.973H1.116C.943 16.447 4.005 19.009 7.92 17.7a4.078 4.078 0 002.582-2.876c.207-.666.548-.78 1.174-.588a5.417 5.417 0 01-2.589 3.957 6.272 6.272 0 01-7.306-.933 6.575 6.575 0 01-1.64-3.858c0-.235-.08-.455-.134-.666A88.33 88.33 0 010 11.577zm1.127-.286h9.654c-.06-3.076-2.001-5.258-4.59-5.278-2.882-.04-4.944 2.094-5.071 5.264z" fill="currentColor"/></svg>',
-  },
-  {
-    name: "Docker",
-    url: "https://docker.com",
-    icon: '<svg viewBox="0 0 24 24" fill="none"><path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .102.082.185.185.186m-2.93 0h2.12a.186.186 0 00.184-.186V6.29a.185.185 0 00-.185-.185H8.1a.185.185 0 00-.185.185v1.887c0 .102.083.185.185.186m-2.964 0h2.119a.186.186 0 00.185-.186V6.29a.185.185 0 00-.185-.185H5.136a.186.186 0 00-.186.185v1.887c0 .102.084.185.186.186m5.893 2.715h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m-2.93 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.083.185.185.185m-2.964 0h2.119a.185.185 0 00.185-.185V9.006a.185.185 0 00-.184-.186h-2.12a.186.186 0 00-.186.186v1.887c0 .102.084.185.186.185m-2.92 0h2.12a.185.185 0 00.184-.185V9.006a.185.185 0 00-.184-.186h-2.12a.185.185 0 00-.184.185v1.888c0 .102.082.185.185.185M23.763 9.89c-.065-.051-.672-.51-1.954-.51-.338.001-.676.03-1.01.087-.248-1.7-1.653-2.53-1.716-2.566l-.344-.199-.226.327c-.284.438-.49.922-.612 1.43-.23.97-.09 1.882.403 2.661-.595.332-1.55.413-1.744.42H.751a.751.751 0 00-.75.748 11.376 11.376 0 00.692 4.062c.545 1.428 1.355 2.48 2.41 3.124 1.18.723 3.1 1.137 5.275 1.137.983.003 1.963-.086 2.93-.266a12.248 12.248 0 003.823-1.389c.98-.567 1.86-1.288 2.61-2.136 1.252-1.418 1.998-2.997 2.553-4.4h.221c1.372 0 2.215-.549 2.68-1.009.309-.293.55-.65.707-1.046l.098-.288Z" fill="#2496ED"/></svg>',
-  },
-];
+import { HeroSection } from "@/components/hero-section";
+import { BentoGrid } from "@/components/bento-grid";
+import { ProductShowcase } from "@/components/product-showcase";
+import { FAQSection } from "@/components/faq-section";
+import { CTASection } from "@/components/cta-section";
+import { Footer } from "@/components/footer";
 
 export default function Home() {
   return (
-    <main className="min-h-screen">
-      <section className="flex flex-col items-center justify-center gap-8 px-4 py-24 md:py-32 text-center">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-          lovable
-        </h1>
-        <p className="max-w-xl text-lg text-gray-600 dark:text-gray-400">
-          Built with
-        </p>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 max-w-4xl w-full">
-          {techs.map((tech) => (
-            <a
-              key={tech.name}
-              href={tech.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center gap-3 rounded-xl border border-gray-200 dark:border-gray-800 p-5 transition-all hover:border-gray-400 dark:hover:border-gray-600 hover:shadow-md"
-            >
-              {tech.icon.startsWith("<svg") ? (
-                <div
-                  className="size-12 text-gray-800 dark:text-gray-200 transition-transform group-hover:scale-110"
-                  dangerouslySetInnerHTML={{ __html: tech.icon }}
-                />
-              ) : (
-                <img
-                  src={tech.icon}
-                  alt={tech.name}
-                  className="size-12 object-contain transition-transform group-hover:scale-110"
-                />
-              )}
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                {tech.name}
-              </span>
-            </a>
-          ))}
-        </div>
-      </section>
+    <main className="min-h-screen bg-background relative">
+      <div className="noise-overlay" />
+      <HeroSection />
+      <BentoGrid />
+      <ProductShowcase />
+      <FAQSection />
+      <CTASection />
+      <Footer />
     </main>
   );
 }

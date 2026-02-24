@@ -14,8 +14,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "lovable",
-  description: "Created with create-repokit",
+  title: "PromptForge",
+  description: "Build websites with a single prompt",
 };
 
 export default function RootLayout({

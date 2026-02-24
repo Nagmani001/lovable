@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import { toNodeHandler } from "better-auth/node";
 import type { Server } from "node:http";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
@@ -7,6 +8,7 @@ import { config } from "dotenv";
 import cors from "cors";
 import { shutdown } from "./lib/utils";
 import { initEmail } from "@repo/email/email";
+import { auth } from "./lib/auth";
 
 /*
 INFO: use these to interact with database and send emails
@@ -21,7 +23,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 config({
   path: `${path.join(__dirname, "..")}/.env`,
 });
-
+app.all("/api/auth/{*any}", toNodeHandler(auth));
 app.use(express.json());
 
 app.use(
