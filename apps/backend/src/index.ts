@@ -23,15 +23,17 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 config({
   path: `${path.join(__dirname, "..")}/.env`,
 });
-app.all("/api/auth/{*any}", toNodeHandler(auth));
-app.use(express.json());
 
 app.use(
   cors({
-    origin: [process.env.FRONTEND_URL_DEPLOYED!, "http://localhost:3000"],
-    optionsSuccessStatus: 200,
+    origin: ["http://localhost:3000", "http://localhost:3001"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
   }),
 );
+
+app.all("/api/auth/{*any}", toNodeHandler(auth));
+app.use(express.json());
 
 app.get("/health", (req: Request, res: Response) => {
   res.json({
