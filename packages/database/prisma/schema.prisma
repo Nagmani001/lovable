@@ -23,6 +23,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   sessions      Session[]
   accounts      Account[]
+  project       Project[]
 
   @@unique([email])
   @@map("user")
@@ -74,4 +75,57 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model Project {
+  id                    String                @id @default(uuid())
+  title                 String
+  initialPrompt         String
+  status                ProjectStatus         @default(ACTIVE)
+  lastSavedAt           DateTime?
+  deployedUrl           String?
+  sandboxTemplateId     String?
+  s3Prefix              String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  model                 String                @default("claude")
+  conversationHistories ConversationHistory[]
+  userId                String
+  user                  User                  @relation(fields: [userId], references: [id])
+}
+
+enum ProjectStatus {
+  ACTIVE
+  DEPLOYED
+  ARCHIVED
+  DELETED
+}
+
+model ConversationHistory {
+  id        String           @id @default(uuid())
+  projectId String
+  project   Project          @relation(fields: [projectId], references: [id])
+  contents  String
+  hidden    Boolean
+  from      MessageFrom
+  toolCall  ToolCall?
+  type      ConversationType
+  createdAT DateTime         @default(now())
+}
+
+enum ConversationType {
+  TOOL_CALL
+  TEXT_MESSAGE
+}
+
+enum MessageFrom {
+  USER
+  ASSISTANT
+}
+
+enum ToolCall {
+  READ_FILE
+  WRITE_FILE
+  DELETE_FILE
+  UPDATE_FILE
 }

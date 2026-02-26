@@ -1,4 +1,5 @@
 import { server } from "..";
+import { Request } from "express";
 
 export function shutdown(code = 0) {
   console.log("Shutting down gracefully...");
@@ -8,4 +9,19 @@ export function shutdown(code = 0) {
   setTimeout(() => {
     process.exit(code);
   }, 5000);
+}
+
+export function getParam(req: Request, name: string): string {
+  const val = req.params[name];
+  if (typeof val === "string") return val;
+  throw new Error(`Missing param: ${name}`);
+}
+
+export function resolveModelId(shortName: string): string {
+  const modelMap: Record<string, string> = {
+    claude: "anthropic/claude-sonnet-4-20250514",
+    openai: "openai/gpt-4o",
+    gemini: "google/gemini-2.0-flash-exp",
+  };
+  return modelMap[shortName] || shortName;
 }
