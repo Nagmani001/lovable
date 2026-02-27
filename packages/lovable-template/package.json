@@ -1,0 +1,18 @@
+{
+  "name": "@repo/lovable-template",
+  "private": true,
+  "scripts": {
+    "e2b:build:dev": "npx tsx ./src/build.dev.ts",
+    "e2b:build:prod": "npx tsx ./src/build.prod.ts"
+  },
+  "dependencies": {
+    "@repo/typescript-config":"workspace:*",
+    "@types/node": "^25.3.0",
+    "dotenv": "^17.3.1",
+    "e2b": "^2.13.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
