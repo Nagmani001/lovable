@@ -47,7 +47,7 @@ app.get("/error", (req: Request, res: Response) => {
 });
 
 app.use("/api/v1/project", authMiddleware, projectRouter);
-app.use("/api/v1/chat", authMiddleware, chatRouter);
+app.use("/api/v1/chat", chatRouter);
 app.use("/api/v1/sandbox", authMiddleware, sandboxRouter);
 app.use("/api/v1/deploy", authMiddleware, deployRouter);
 

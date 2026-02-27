@@ -19,9 +19,9 @@ export function getParam(req: Request, name: string): string {
 
 export function resolveModelId(shortName: string): string {
   const modelMap: Record<string, string> = {
-    claude: "anthropic/claude-sonnet-4-20250514",
+    claude: "anthropic/claude-3.5-sonnet",
     openai: "openai/gpt-4o",
-    gemini: "google/gemini-2.0-flash-exp",
+    gemini: "google/gemini-3-flash-preview",
   };
   return modelMap[shortName] || shortName;
 }
