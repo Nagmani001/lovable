@@ -20,7 +20,7 @@ export function getParam(req: Request, name: string): string {
 export function resolveModelId(shortName: string): string {
   const modelMap: Record<string, string> = {
     claude: "anthropic/claude-3.5-sonnet",
-    openai: "openai/gpt-4o",
+    openai: "gpt-4.1",
     gemini: "google/gemini-3-flash-preview",
   };
   return modelMap[shortName] || shortName;

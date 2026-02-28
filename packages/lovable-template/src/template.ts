@@ -16,7 +16,7 @@ export const template = Template()
       "rm /tmp/openvscode.tar.gz",
   )
 
-  .copy("starter-project", "/home/user/project")
+  .copy("starter-project-lovable", "/home/user/project")
 
   .runCmd("chown -R user:user /home/user")
 

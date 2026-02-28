@@ -1,0 +1,25 @@
+{
+  "name": "@repo/orchestrator",
+  "version": "1.0.0",
+  "description": "AI agent orchestrator for Lovable",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    "./orchestrator": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.997.0",
+    "@google/genai": "^1.43.0",
+    "@repo/common": "workspace:^",
+    "@repo/database": "workspace:^",
+    "e2b": "^2.13.0",
+    "openai": "^4.85.0",
+    "zod": "^4.3.6"
+  }
+}
