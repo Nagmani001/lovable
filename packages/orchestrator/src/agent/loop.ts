@@ -1,8 +1,6 @@
 import OpenAI from "openai";
-import { GoogleGenAI } from "@google/genai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { StreamChunk } from "@repo/common/types";
-import type { ToolDefinition } from "../types/index.js";
 import { ToolExecutor } from "../tools/executor.js";
 import { loadSystemPrompt, loadToolDefinitions } from "../tools/converter.js";
 
@@ -27,8 +25,9 @@ interface AgentLoopParams {
 export async function runAgentLoop(
   params: AgentLoopParams,
 ): Promise<ChatCompletionMessageParam[]> {
+  await new Promise((r) => setTimeout(r, 1000));
   const client = new OpenAI({
-    apiKey: "AIzaSyAebd2PYz6EMMqyI8Wqn2R8Se1W1V-xG70",
+    apiKey: params.openRouterApiKey,
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
   });
 

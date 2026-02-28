@@ -3,8 +3,8 @@ import { template } from "./template";
 
 async function main() {
   await Template.build(template, "lovable-template-dev", {
-    cpuCount: 4,
-    memoryMB: 1024,
+    cpuCount: 6,
+    memoryMB: 1536,
     onBuildLogs: defaultBuildLogger(),
   });
 
