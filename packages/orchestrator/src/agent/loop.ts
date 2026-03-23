@@ -1,8 +1,10 @@
 import OpenAI from "openai";
+import fs from "fs";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { StreamChunk } from "@repo/common/types";
 import { ToolExecutor } from "../tools/executor.js";
 import { loadSystemPrompt, loadToolDefinitions } from "../tools/converter.js";
+import type { ContextManager } from "../context/context-manager.js";
 
 interface AgentLoopParams {
   openRouterApiKey: string;
@@ -13,27 +15,28 @@ interface AgentLoopParams {
   onStream: (chunk: StreamChunk) => void;
   consoleLogs?: string[];
   networkRequests?: string[];
+  contextManager?: ContextManager;
 }
 
-/**
- * The core AI agent loop (OpenRouter / OpenAI-compatible).
- *
- * 1. Send messages + tools to the model
- * 2. If the model responds with tool calls → execute them, add results, loop back to 1
- * 3. If the model responds with only text → done, exit loop
- */
 export async function runAgentLoop(
   params: AgentLoopParams,
 ): Promise<ChatCompletionMessageParam[]> {
   await new Promise((r) => setTimeout(r, 1000));
+
+  // local llm
   const client = new OpenAI({
     apiKey: params.openRouterApiKey,
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    // baseURL: "https://openrouter.ai/api/v1",
   });
 
   const systemPrompt = loadSystemPrompt();
   const toolDefinitions = loadToolDefinitions();
-  const toolExecutor = new ToolExecutor(params.sandbox, params.projectBasePath);
+  const toolExecutor = new ToolExecutor(
+    params.sandbox,
+    params.projectBasePath,
+    params.contextManager,
+  );
 
   // Store any console logs or network requests the frontend sent
   if (params.consoleLogs) {
@@ -49,7 +52,7 @@ export async function runAgentLoop(
   ];
 
   let continueLoop = true;
-  const maxIterations = 25; // Safety limit
+  const maxIterations = 25;
   let iteration = 0;
 
   while (continueLoop && iteration < maxIterations) {
@@ -57,14 +60,30 @@ export async function runAgentLoop(
 
     params.onStream({ type: "status", status: "thinking" });
 
-    const response = await client.chat.completions.create({
-      model: "gemini-2.5-flash",
-      max_completion_tokens: 8096,
-      messages,
-      tools: toolDefinitions as OpenAI.ChatCompletionTool[],
-    });
+    fs.writeFileSync(
+      `/home/nagmani/root/temp/messages${iteration}.json`,
+      JSON.stringify(messages, null, 2),
+    );
+    let response;
 
-    const choice = response.choices[0];
+    // To avoid rate limiting by gemini
+    while (true) {
+      try {
+        response = await client.chat.completions.create({
+          // open router  model: "gemini-3-flash-preview",
+          model: "gemini-3-flash-preview",
+          max_completion_tokens: 8096,
+          messages,
+          tools: toolDefinitions as OpenAI.ChatCompletionTool[],
+        });
+        break;
+      } catch (err) {
+        console.log("error", err);
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+
+    const choice = response!.choices[0];
     if (!choice) {
       continueLoop = false;
       break;

@@ -21,7 +21,6 @@ export function loadToolDefinitions(): ToolDefinition[] {
   const toolsPath = resolve(__dirname, "../prompt/agent_tools.json");
 
   const raw = readFileSync(toolsPath, "utf-8");
-  console.log(raw);
 
   try {
     const toolsJson = JSON.parse(raw) as Record<string, RawToolDef>;

@@ -19,7 +19,7 @@ export function initOrchestrator(): Orchestrator {
     awsSecretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
     sandboxTemplate: process.env.E2B_TEMPLATE || "base",
     sandboxTimeoutMs: 60 * 60 * 1000, // 60 minutes
-    heartbeatTimeoutMs: 5 * 60 * 1000, // 5 minutes without heartbeat → shutdown
+    heartbeatTimeoutMs: 2 * 60 * 1000, // 5 minutes without heartbeat → shutdown
     projectBasePath: "/home/user/project",
   };
 

@@ -1,10 +1,11 @@
-import { BACKEND_URL_CLIENT } from "./util";
+import { toast } from "@repo/ui/lib/toast";
+import { BASE_URL } from "./util";
 import axios from "axios";
 
 export async function createProject(prompt: string, model: string) {
   try {
     const res = await axios.post(
-      `${BACKEND_URL_CLIENT}/api/v1/project/create`,
+      `${BASE_URL}/api/v1/project/create`,
       {
         prompt,
         model,
@@ -16,13 +17,14 @@ export async function createProject(prompt: string, model: string) {
 
     return res.data;
   } catch (err) {
+    toast.error("failed to create project , please sign in first");
     throw new Error("Failed to create project");
   }
 }
 
 export async function listProjects() {
   try {
-    const res = await axios.get(`${BACKEND_URL_CLIENT}/api/v1/project/list`, {
+    const res = await axios.get(`${BASE_URL}/api/v1/project/list`, {
       withCredentials: true,
     });
     return res.data;
@@ -33,12 +35,9 @@ export async function listProjects() {
 
 export async function getProject(projectId: string) {
   try {
-    const res = await axios.get(
-      `${BACKEND_URL_CLIENT}/api/v1/project/${projectId}`,
-      {
-        withCredentials: true,
-      },
-    );
+    const res = await axios.get(`${BASE_URL}/api/v1/project/${projectId}`, {
+      withCredentials: true,
+    });
     return res.data;
   } catch (err) {
     throw new Error("Failed to get project");
@@ -47,12 +46,9 @@ export async function getProject(projectId: string) {
 
 export async function deleteProject(projectId: string) {
   try {
-    const res = await axios.delete(
-      `${BACKEND_URL_CLIENT}/api/v1/project/${projectId}`,
-      {
-        withCredentials: true,
-      },
-    );
+    const res = await axios.delete(`${BASE_URL}/api/v1/project/${projectId}`, {
+      withCredentials: true,
+    });
     return res.data;
   } catch (err) {
     throw new Error("Failed to delete project");
@@ -62,7 +58,7 @@ export async function deleteProject(projectId: string) {
 export async function connectToProject(projectId: string) {
   try {
     const res = await axios.post(
-      `${BACKEND_URL_CLIENT}/api/v1/sandbox/${projectId}/connect`,
+      `${BASE_URL}/api/v1/sandbox/${projectId}/connect`,
       {},
       {
         withCredentials: true,
@@ -77,7 +73,7 @@ export async function connectToProject(projectId: string) {
 export async function sendHeartbeat(projectId: string) {
   try {
     await axios.post(
-      `${BACKEND_URL_CLIENT}/api/v1/sandbox/${projectId}/heartbeat`,
+      `${BASE_URL}/api/v1/sandbox/${projectId}/heartbeat`,
       {},
       {
         withCredentials: true,
@@ -88,15 +84,13 @@ export async function sendHeartbeat(projectId: string) {
 
 export async function persistProject(projectId: string) {
   // Use sendBeacon for reliable delivery on tab close
-  navigator.sendBeacon(
-    `${BACKEND_URL_CLIENT}/api/v1/sandbox/${projectId}/persist`,
-  );
+  navigator.sendBeacon(`${BASE_URL}/api/v1/sandbox/${projectId}/persist`);
 }
 
 export async function getProjectHistory(projectId: string) {
   try {
     const res = await axios.get(
-      `${BACKEND_URL_CLIENT}/api/v1/chat/${projectId}/history`,
+      `${BASE_URL}/api/v1/chat/${projectId}/history`,
       {
         withCredentials: true,
       },
@@ -111,7 +105,7 @@ export async function* streamChat(
   projectId: string,
   message: string,
 ): AsyncGenerator<{ type: string; data: Record<string, unknown> }> {
-  const res = await fetch(`${BACKEND_URL_CLIENT}/api/v1/chat/${projectId}`, {
+  const res = await fetch(`${BASE_URL}/api/v1/chat/${projectId}`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -165,7 +159,7 @@ export async function* streamChat(
 export async function deployProject(projectId: string) {
   try {
     const res = await axios.post(
-      `${BACKEND_URL_CLIENT}/api/v1/deploy/${projectId}`,
+      `${BASE_URL}/api/v1/deploy/${projectId}`,
       {},
       {
         withCredentials: true,

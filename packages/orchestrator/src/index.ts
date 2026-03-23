@@ -7,12 +7,14 @@ import { SandboxManager } from "./sandbox/manager.js";
 import { ProjectStorage } from "./storage/s3.js";
 import { ProjectDeployer } from "./deploy/deployer.js";
 import { runAgentLoop } from "./agent/loop.js";
+import { ContextManager } from "./context/context-manager.js";
 
 export class Orchestrator {
   private sandboxManager: SandboxManager;
   private storage: ProjectStorage;
   private deployer: ProjectDeployer;
   private config: OrchestratorConfig;
+  private contextManagers: Map<string, ContextManager> = new Map();
 
   constructor(config: OrchestratorConfig) {
     this.config = config;
@@ -90,13 +92,28 @@ export class Orchestrator {
       return params.conversationHistory;
     }
 
-    // Add the new user message to history
-    const messages: ChatCompletionMessageParam[] = [
-      ...params.conversationHistory,
-      { role: "user", content: params.message },
-    ];
+    // Get or create ContextManager for this project
+    let contextManager = this.contextManagers.get(params.projectId);
+    if (!contextManager) {
+      contextManager = ContextManager.createFromBaseline();
+      this.contextManagers.set(params.projectId, contextManager);
+    }
 
-    // Run the agent loop
+    // Generate useful-context and inject into a cloned messages array
+    const usefulContext = contextManager.generateContext();
+    const messages: ChatCompletionMessageParam[] =
+      params.conversationHistory.map((msg, idx, arr) => {
+        // Inject into the last user message
+        if (
+          msg.role === "user" &&
+          idx === arr.length - 1 &&
+          typeof msg.content === "string"
+        ) {
+          return { ...msg, content: `${usefulContext}\n\n${msg.content}` };
+        }
+        return msg;
+      });
+
     const updatedMessages = await runAgentLoop({
       openRouterApiKey: this.config.openRouterApiKey,
       model: params.model || this.config.defaultModel,
@@ -106,6 +123,7 @@ export class Orchestrator {
       onStream: params.onStream,
       consoleLogs: params.consoleLogs,
       networkRequests: params.networkRequests,
+      contextManager,
     });
 
     return updatedMessages;

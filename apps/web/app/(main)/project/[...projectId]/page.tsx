@@ -8,7 +8,6 @@ import { useChat } from "@/hooks/use-chat";
 import { useHeartbeat } from "@/hooks/use-heartbeat";
 import { ChatPanel } from "@/components/workspace/chat-panel";
 import { WorkspacePanel } from "@/components/workspace/workspace-panel";
-import { WorkspaceHeader } from "@/components/workspace/workspace-header";
 
 export default function ProjectWorkspacePage({
   params,
@@ -26,14 +25,8 @@ export default function ProjectWorkspacePage({
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const autoSentRef = useRef(false);
 
-  const {
-    messages,
-    sendMessage,
-    isStreaming,
-    activeToolCalls,
-    agentStatus,
-    loadHistory,
-  } = useChat(project);
+  const { messages, sendMessage, isStreaming, agentStatus, loadHistory } =
+    useChat(project);
 
   useHeartbeat(previewUrl ? project : null);
 
@@ -48,12 +41,9 @@ export default function ProjectWorkspacePage({
         setVscodeUrl(sandbox.vscodeUrl);
 
         const { history } = await getProjectHistory(project);
-        console.log("history", history);
         const visible = history.filter(
           (h: any) => !h.hidden && h.type === "TEXT_MESSAGE",
         );
-
-        console.log("visible", visible);
 
         if (visible.length > 0) {
           loadHistory(visible);
@@ -106,15 +96,9 @@ export default function ProjectWorkspacePage({
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <WorkspaceHeader
-        projectId={project}
-        agentStatus={agentStatus}
-        activeToolCalls={activeToolCalls}
-      />
-
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-[420px] min-w-[320px] max-w-[600px] border-r border-border flex flex-col">
+    <div className="flex flex-col h-[calc(100vh-4rem)] min-h-0 bg-background">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <div className="w-[420px] min-w-[320px] max-w-[600px] border-r border-border flex flex-col min-h-0">
           <ChatPanel
             messages={messages}
             onSendMessage={sendMessage}
@@ -123,7 +107,7 @@ export default function ProjectWorkspacePage({
           />
         </div>
 
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           <WorkspacePanel previewUrl={previewUrl} vscodeUrl={vscodeUrl} />
         </div>
       </div>

@@ -1,15 +1,22 @@
 import type { Sandbox } from "e2b";
 import type { StreamChunk } from "@repo/common/types";
+import type { ContextManager } from "../context/context-manager.js";
 
 export class ToolExecutor {
   private sandbox: Sandbox;
   private projectBasePath: string;
   private consoleLogs: string[] = [];
   private networkRequests: string[] = [];
+  private contextManager?: ContextManager;
 
-  constructor(sandbox: Sandbox, projectBasePath: string) {
+  constructor(
+    sandbox: Sandbox,
+    projectBasePath: string,
+    contextManager?: ContextManager,
+  ) {
     this.sandbox = sandbox;
     this.projectBasePath = projectBasePath;
+    this.contextManager = contextManager;
   }
 
   storeConsoleLogs(logs: string[]): void {
@@ -83,6 +90,8 @@ export class ToolExecutor {
 
         await this.sandbox.files.write(filePath, content);
 
+        this.contextManager?.applyWrite(args.file_path as string, content);
+
         onStream({
           type: "file_change",
           action: "write",
@@ -119,6 +128,8 @@ export class ToolExecutor {
         const filePath = this.resolvePath(args.file_path as string);
         await this.sandbox.files.remove(filePath);
 
+        this.contextManager?.applyDelete(args.file_path as string);
+
         onStream({
           type: "file_change",
           action: "delete",
@@ -139,6 +150,11 @@ export class ToolExecutor {
         await this.sandbox.commands.run(`mkdir -p "${dir}"`);
 
         await this.sandbox.commands.run(`mv "${originalPath}" "${newPath}"`);
+
+        this.contextManager?.applyRename(
+          args.original_file_path as string,
+          args.new_file_path as string,
+        );
 
         onStream({
           type: "file_change",
@@ -164,19 +180,37 @@ export class ToolExecutor {
 
       case "lov-line-replace": {
         const filePath = this.resolvePath(args.file_path as string);
-        const firstLine = args.first_replaced_line as number;
-        const lastLine = args.last_replaced_line as number;
+        const hintFirst = args.first_replaced_line as number;
+        const hintLast = args.last_replaced_line as number;
+        const search = args.search as string;
         const replace = args.replace as string;
 
         const content = await this.sandbox.files.read(filePath);
         const lines = content.split("\n");
 
-        // Replace the specified line range
+        // Validate search against file content and find the actual line range
+        const { actualFirst, actualLast } = this.findMatchingRange(
+          lines,
+          search,
+          hintFirst,
+          hintLast,
+        );
+
+        // Replace the matched line range
         const replaceLines = replace.split("\n");
-        lines.splice(firstLine - 1, lastLine - firstLine + 1, ...replaceLines);
+        lines.splice(
+          actualFirst - 1,
+          actualLast - actualFirst + 1,
+          ...replaceLines,
+        );
 
         const newContent = lines.join("\n");
         await this.sandbox.files.write(filePath, newContent);
+
+        this.contextManager?.applyLineReplace(
+          args.file_path as string,
+          newContent,
+        );
 
         onStream({
           type: "file_change",
@@ -184,7 +218,7 @@ export class ToolExecutor {
           path: args.file_path as string,
         });
 
-        return `Lines ${firstLine}-${lastLine} replaced in ${args.file_path}`;
+        return `Lines ${actualFirst}-${actualLast} replaced in ${args.file_path}`;
       }
 
       case "lov-search-files": {
@@ -217,6 +251,8 @@ export class ToolExecutor {
           { timeoutMs: 60_000 },
         );
 
+        await this.syncPackageJson();
+
         onStream({
           type: "terminal",
           content: result.stdout + (result.stderr || ""),
@@ -231,6 +267,8 @@ export class ToolExecutor {
           `cd ${this.projectBasePath} && npm uninstall ${pkg}`,
           { timeoutMs: 30_000 },
         );
+
+        await this.syncPackageJson();
 
         return result.stdout || "Package removed";
       }
@@ -303,44 +341,160 @@ export class ToolExecutor {
         return result.stdout || "Failed to fetch website";
       }
 
-      // ═══════════════════════════════════════
-      // NOT IMPLEMENTED (stubs for tools that need external services)
-      // ═══════════════════════════════════════
-
-      case "websearch--web_search":
-        return "Web search is not yet configured. Please set up a search API integration.";
-
-      case "imagegen--generate_image":
-        return "Image generation is not yet configured. Please set up an image generation API.";
-
-      case "imagegen--edit_image":
-        return "Image editing is not yet configured. Please set up an image generation API.";
-
-      case "secrets--add_secret":
-      case "secrets--update_secret":
-        return "Secrets management is not yet configured.";
-
-      case "supabase--docs-search":
-      case "supabase--docs-get":
-        return "Supabase integration is not yet configured.";
-
-      case "document--parse_document":
-        return "Document parsing is not yet configured.";
-
-      case "analytics--read_project_analytics":
-        return "Analytics is not yet configured.";
-
-      case "stripe--enable_stripe":
-        return "Stripe integration is not yet configured.";
-
-      case "security--run_security_scan":
-      case "security--get_security_scan_results":
-      case "security--get_table_schema":
-        return "Security scanning is not yet configured.";
-
       default:
         return `Unknown tool: ${toolName}`;
     }
+  }
+
+  private async syncPackageJson(): Promise<void> {
+    if (!this.contextManager) return;
+    try {
+      const pkgPath = `${this.projectBasePath}/package.json`;
+      const content = await this.sandbox.files.read(pkgPath);
+      this.contextManager.applyWrite("package.json", content);
+    } catch {
+      // ignore read failures
+    }
+  }
+
+  /**
+   * Validates the search parameter against actual file content and finds
+   * the correct line range, correcting for line number mismatches from the AI.
+   */
+  private findMatchingRange(
+    lines: string[],
+    search: string,
+    hintFirst: number,
+    hintLast: number,
+  ): { actualFirst: number; actualLast: number } {
+    const searchLines = search.split("\n");
+    const ellipsisIndex = searchLines.findIndex((l) => l.trim() === "...");
+
+    const SEARCH_WINDOW = 20;
+
+    if (ellipsisIndex < 0) {
+      // No ellipsis — find where the full search content starts
+      const start = this.findBlockStart(
+        lines,
+        searchLines,
+        hintFirst,
+        SEARCH_WINDOW,
+      );
+      if (start !== -1) {
+        return {
+          actualFirst: start,
+          actualLast: start + searchLines.length - 1,
+        };
+      }
+      // Fallback to provided line numbers
+      return { actualFirst: hintFirst, actualLast: hintLast };
+    }
+
+    // Has ellipsis — find prefix start and suffix end independently
+    const prefixLines = searchLines.slice(0, ellipsisIndex);
+    const suffixLines = searchLines.slice(ellipsisIndex + 1);
+
+    let actualFirst = hintFirst;
+    let actualLast = hintLast;
+
+    if (prefixLines.length > 0) {
+      const found = this.findBlockStart(
+        lines,
+        prefixLines,
+        hintFirst,
+        SEARCH_WINDOW,
+      );
+      if (found !== -1) actualFirst = found;
+    }
+
+    if (suffixLines.length > 0) {
+      const found = this.findBlockEnd(
+        lines,
+        suffixLines,
+        hintLast,
+        SEARCH_WINDOW,
+      );
+      if (found !== -1) actualLast = found;
+    }
+
+    if (actualFirst > actualLast) {
+      return { actualFirst: hintFirst, actualLast: hintLast };
+    }
+
+    return { actualFirst, actualLast };
+  }
+
+  /**
+   * Find where a block of lines starts in the file, searching near `hint` (1-indexed).
+   * Returns 1-indexed line number or -1 if not found.
+   */
+  private findBlockStart(
+    fileLines: string[],
+    blockLines: string[],
+    hint: number,
+    window: number,
+  ): number {
+    if (blockLines.length === 0) return -1;
+
+    for (let offset = 0; offset <= window; offset++) {
+      const deltas = offset === 0 ? [0] : [offset, -offset];
+      for (const delta of deltas) {
+        const startIdx = hint - 1 + delta; // 0-indexed
+        if (startIdx < 0 || startIdx + blockLines.length > fileLines.length) {
+          continue;
+        }
+
+        let match = true;
+        for (let i = 0; i < blockLines.length; i++) {
+          const fileLine = fileLines[startIdx + i] ?? "";
+          const searchLine = blockLines[i] ?? "";
+          if (fileLine.trim() !== searchLine.trim()) {
+            match = false;
+            break;
+          }
+        }
+
+        if (match) return startIdx + 1; // 1-indexed
+      }
+    }
+
+    return -1;
+  }
+
+  /**
+   * Find where a block of lines ends in the file, searching near `hint` (1-indexed).
+   * Returns 1-indexed line number of the last line, or -1 if not found.
+   */
+  private findBlockEnd(
+    fileLines: string[],
+    blockLines: string[],
+    hint: number,
+    window: number,
+  ): number {
+    if (blockLines.length === 0) return -1;
+
+    for (let offset = 0; offset <= window; offset++) {
+      const deltas = offset === 0 ? [0] : [offset, -offset];
+      for (const delta of deltas) {
+        const endIdx = hint - 1 + delta; // 0-indexed
+        const startIdx = endIdx - blockLines.length + 1;
+        if (startIdx < 0 || endIdx >= fileLines.length) continue;
+
+        let match = true;
+        for (let i = 0; i < blockLines.length; i++) {
+          const fileLine = fileLines[startIdx + i] ?? "";
+          const searchLine = blockLines[i] ?? "";
+          if (fileLine.trim() !== searchLine.trim()) {
+            match = false;
+            break;
+          }
+        }
+
+        if (match) return endIdx + 1; // 1-indexed
+      }
+    }
+
+    return -1;
   }
 
   private sliceLines(content: string, linesParam: string): string {

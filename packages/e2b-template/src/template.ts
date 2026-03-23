@@ -5,18 +5,6 @@ export const template = Template()
 
   .setUser("root")
 
-  /*
-    .runCmd("curl -fsSL https://deb.nodesource.com/setup_24.x | bash -")
-    .aptInstall(["nodejs"])
-   * */
-
-  /*
-    install bun version 1.2.15
-  .runCmd("curl -fsSL https://bun.sh/install | bash -s -- bun-v1.2.15")
-
-   srouce bashrc
-  .runCmd("source /home/user/.bashrc")
-    */
   .runCmd("npm install -g bun@1.2.15")
 
   .runCmd(
@@ -38,6 +26,8 @@ export const template = Template()
 #!/bin/bash
 
 # Start Vite dev server on port 5173
+npm install -g pm2
+
 cd /home/user/project
 bunx vite --host 0.0.0.0 --port 5173 &
 
