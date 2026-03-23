@@ -193,6 +193,28 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/e2b-template:
+    dependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^25.3.0
+        version: 25.3.1
+      dotenv:
+        specifier: ^17.3.1
+        version: 17.3.1
+      e2b:
+        specifier: ^2.13.0
+        version: 2.13.0
+    devDependencies:
+      tsx:
+        specifier: ^4.0.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
   packages/email:
     dependencies:
       '@react-email/components':
@@ -265,28 +287,6 @@ importers:
       typescript-eslint:
         specifier: ^8.50.0
         version: 8.56.0(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
-
-  packages/lovable-template:
-    dependencies:
-      '@repo/typescript-config':
-        specifier: workspace:*
-        version: link:../typescript-config
-      '@types/node':
-        specifier: ^25.3.0
-        version: 25.3.1
-      dotenv:
-        specifier: ^17.3.1
-        version: 17.3.1
-      e2b:
-        specifier: ^2.13.0
-        version: 2.13.0
-    devDependencies:
-      tsx:
-        specifier: ^4.0.0
-        version: 4.21.0
-      typescript:
-        specifier: ^5.0.0
-        version: 5.9.3
 
   packages/orchestrator:
     dependencies:
@@ -7627,7 +7627,7 @@ snapshots:
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 22.19.11
+      '@types/node': 25.3.1
 
   '@types/chai@5.2.3':
     dependencies:
@@ -7636,7 +7636,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.1
 
   '@types/cors@2.8.19':
     dependencies:
@@ -7652,7 +7652,7 @@ snapshots:
 
   '@types/express-serve-static-core@5.1.1':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.1
       '@types/qs': 6.14.0
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
@@ -7669,7 +7669,7 @@ snapshots:
 
   '@types/node-fetch@2.6.13':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.1
       form-data: 4.0.5
 
   '@types/node@18.19.130':
@@ -7686,7 +7686,7 @@ snapshots:
 
   '@types/nodemailer@7.0.11':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.1
 
   '@types/pg@8.16.0':
     dependencies:
@@ -7718,12 +7718,12 @@ snapshots:
 
   '@types/send@1.2.1':
     dependencies:
-      '@types/node': 22.19.11
+      '@types/node': 25.3.1
 
   '@types/serve-static@2.2.0':
     dependencies:
       '@types/http-errors': 2.0.5
-      '@types/node': 22.19.11
+      '@types/node': 25.3.1
 
   '@typescript-eslint/eslint-plugin@8.56.0(@typescript-eslint/parser@8.56.0(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)':
     dependencies:
