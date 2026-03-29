@@ -222,20 +222,27 @@ export class ToolExecutor {
       }
 
       case "lov-search-files": {
+        console.log("args", args);
         const query = args.query as string;
+        console.log("query", query);
         const includePattern = args.include_pattern as string;
+        console.log("includePattern", includePattern);
         const excludePattern = args.exclude_pattern as string | undefined;
+        console.log("excludePattern", excludePattern);
         const caseSensitive = args.case_sensitive as boolean | undefined;
+        console.log("caseSensitive", caseSensitive);
 
         let cmd = `cd ${this.projectBasePath} && grep -rn`;
         if (!caseSensitive) cmd += "i";
         cmd += ` "${query}" --include="${includePattern}"`;
         if (excludePattern) cmd += ` --exclude="${excludePattern}"`;
         cmd += " . 2>/dev/null || true";
+        console.log("cmd", cmd);
 
         const result = await this.sandbox.commands.run(cmd, {
           timeoutMs: 15_000,
         });
+        console.log("result", result);
 
         return result.stdout || "No results found";
       }

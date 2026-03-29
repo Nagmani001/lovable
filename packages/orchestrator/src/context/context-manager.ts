@@ -1,3 +1,4 @@
+//BUG: written by AI , not working currently  , i always send the initial context .
 import { readFileSync, readdirSync, statSync } from "fs";
 import { resolve, dirname, relative, basename, extname } from "path";
 import { fileURLToPath } from "url";
