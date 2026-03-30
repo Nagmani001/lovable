@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+
 import { toNodeHandler } from "better-auth/node";
 import type { Server } from "node:http";
 import { dirname } from "path";
