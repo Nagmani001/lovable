@@ -1,0 +1,123 @@
+  name: CD
+
+  on:
+    push:
+      branches: [main]
+
+  env:
+    REGISTRY: ghcr.io  
+    IMAGE_PREFIX: ghcr.io/nagmani001/lovable
+
+  jobs:
+    changes:
+      runs-on: ubuntu-latest
+      outputs:
+        backend: ${{ steps.filter.outputs.backend }}
+        web: ${{ steps.filter.outputs.web }}
+      steps:
+        - uses: actions/checkout@v4
+        - uses: dorny/paths-filter@v3
+          id: filter
+          with:
+            filters: |
+              backend:
+                - 'apps/backend/**'
+                - 'packages/database/**'
+                - 'packages/common/**'
+                - 'packages/email/**'
+                - 'packages/orchestrator/**'
+                - 'docker/backend/**'
+              web:
+                - 'apps/web/**'
+                - 'packages/ui/**'
+                - 'packages/common/**'
+                - 'docker/web/**'
+
+    # Step 2: Build and push only what changed
+    build-backend:
+      needs: changes
+      if: needs.changes.outputs.backend == 'true'
+      runs-on: ubuntu-latest
+      permissions:
+       contents: read
+       packages: write
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Log in to GitHub Container Registry
+          uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}  
+
+        - name: Build and push backend
+          uses: docker/build-push-action@v6
+          with:
+            context: .
+            file: docker/backend/Dockerfile
+            push: true
+            tags: |
+              ${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
+              ${{ env.IMAGE_PREFIX }}/backend:latest
+
+    build-web:
+      needs: changes
+      if: needs.changes.outputs.web == 'true'
+      runs-on: ubuntu-latest
+      permissions:
+       contents: read
+       packages: write
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Log in to GitHub Container Registry
+          uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{ github.actor }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+
+        - name: Build and push web
+          uses: docker/build-push-action@v6
+          with:
+            context: .
+            file: docker/web/Dockerfile
+            push: true
+            tags: |
+              ${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
+              ${{ env.IMAGE_PREFIX }}/web:latest
+
+# Boilerplate CD 
+#      deploy:
+#       needs: [build-backend, build-web]
+#       # Run even if one build was skipped (nothing changed in that app)
+#       if: always() && (needs.build-backend.result == 'success' || needs.build-web.result == 'success' || needs.build-backend.result == 'skipped' || needs.build-web.result == 'skipped')
+#       runs-on: ubuntu-latest
+#       steps:
+#         - name: Deploy to EC2
+#           uses: appleboy/ssh-action@v1
+#           with:
+#             host: ${{ secrets.SSH_HOST }}
+#             username: ${{ secrets.SSH_USERNAME }}
+#             key: ${{ secrets.SSH_KEY }}
+#             script: |
+#               cd /home/${{ secrets.SSH_USERNAME }}/app
+#
+#               # Pull latest images
+#               docker compose pull
+#
+#               # Run database migrations
+#               docker compose run --rm backend npx prisma migrate deploy
+#
+#               # Restart services with zero downtime
+#               # --no-deps prevents restarting dependencies (database)
+#               docker compose up -d --no-deps --wait backend
+#               docker compose up -d --no-deps --wait web
+#
+#               # Verify health
+#               curl -f http://localhost:3001/health || exit 1
+#               curl -f http://localhost:3000 || exit 1
+#
+#               # Clean up old images
+#               docker image prune -f
