@@ -84,40 +84,54 @@
             context: .
             file: docker/web/Dockerfile
             push: true
+            build-args: |
+              NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}
             tags: |
               ${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
               ${{ env.IMAGE_PREFIX }}/web:latest
 
-# Boilerplate CD 
-#      deploy:
-#       needs: [build-backend, build-web]
-#       # Run even if one build was skipped (nothing changed in that app)
-#       if: always() && (needs.build-backend.result == 'success' || needs.build-web.result == 'success' || needs.build-backend.result == 'skipped' || needs.build-web.result == 'skipped')
-#       runs-on: ubuntu-latest
-#       steps:
-#         - name: Deploy to EC2
-#           uses: appleboy/ssh-action@v1
-#           with:
-#             host: ${{ secrets.SSH_HOST }}
-#             username: ${{ secrets.SSH_USERNAME }}
-#             key: ${{ secrets.SSH_KEY }}
-#             script: |
-#               cd /home/${{ secrets.SSH_USERNAME }}/app
-#
-#               # Pull latest images
-#               docker compose pull
-#
-#               # Run database migrations
-#               docker compose run --rm backend npx prisma migrate deploy
-#
-#               # Restart services with zero downtime
-#               # --no-deps prevents restarting dependencies (database)
-#               docker compose up -d --no-deps --wait backend
-#               docker compose up -d --no-deps --wait web
-#
-#               # Verify health
-#               curl -f http://localhost:3001/health || exit 1
-#               curl -f http://localhost:3000 || exit 1
-#
-#               # Clean up old images
-#               docker image prune -f
+    deploy:
+      needs: [build-backend, build-web]
+      # Run even if one build was skipped (nothing changed in that app)
+      if: always() && !failure() && !cancelled()
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Copy compose file to VM
+          uses: appleboy/scp-action@v0.1.7
+          with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USERNAME }}
+            key: ${{ secrets.SSH_KEY }}
+            source: docker/compose-files/docker-compose-deploy.yml
+            target: /home/${{ secrets.SSH_USERNAME }}/lovable/
+            strip_components: 2
+
+        - name: Deploy to VM
+          uses: appleboy/ssh-action@v1
+          with:
+            host: ${{ secrets.SSH_HOST }}
+            username: ${{ secrets.SSH_USERNAME }}
+            key: ${{ secrets.SSH_KEY }}
+            script: |
+              cd /home/${{ secrets.SSH_USERNAME }}/lovable
+
+              # Login to GHCR to pull private images
+              echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+
+              # Pull latest images
+              docker compose -f docker-compose-deploy.yml pull
+
+              # Run database migrations
+              docker compose -f docker-compose-deploy.yml run --rm backend sh -c "cd packages/database && npx prisma migrate deploy"
+
+              # Restart services
+              docker compose -f docker-compose-deploy.yml up -d --no-deps backend
+              docker compose -f docker-compose-deploy.yml up -d --no-deps web
+
+              # Verify health
+              curl -f http://localhost:5001/health || exit 1
+
+              # Clean up old images
+              docker image prune -f

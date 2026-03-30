@@ -1,0 +1,40 @@
+services:
+  database:
+    image: postgres
+    container_name: database-lovable
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+    ports:
+      - '5434:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 1s
+      timeout: 10s
+      retries: 10
+
+  backend:
+    image: ghcr.io/nagmani001/lovable/backend:latest
+    container_name: backend-lovable
+    restart: always
+    ports:
+      - "5001:5001"
+    env_file:
+      - .env.backend
+    depends_on:
+      database:
+        condition: service_healthy
+
+  web:
+    image: ghcr.io/nagmani001/lovable/web:latest
+    container_name: web-lovable
+    restart: always
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env.web
+
+volumes:
+  pgdata:

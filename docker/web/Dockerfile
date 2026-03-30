@@ -20,7 +20,11 @@ COPY --from=prepare /app/out/json/ .
 RUN pnpm install
 
 COPY --from=prepare /app/out/full/ .
-RUN pnpm build 
+
+ARG NEXT_PUBLIC_BASE_URL
+ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
+
+RUN pnpm build
 
 FROM node:${NODE_VERSION}-alpine AS runner
 WORKDIR /app
