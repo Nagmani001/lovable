@@ -3,7 +3,6 @@ import { BentoGrid } from "@/components/bento-grid";
 import { ProductShowcase } from "@/components/product-showcase";
 import { FAQSection } from "@/components/faq-section";
 import { CTASection } from "@/components/cta-section";
-
 import { Footer } from "@/components/footer";
 import { cookies } from "next/headers";
 import { authClient } from "@/lib/auth";

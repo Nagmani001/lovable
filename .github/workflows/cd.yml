@@ -117,9 +117,6 @@
             script: |
               cd /home/${{ secrets.SSH_USERNAME }}/lovable
 
-              # Login to GHCR to pull private images
-              echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
-
               # Pull latest images
               docker compose -f docker-compose-deploy.yml pull
 
