@@ -7,7 +7,7 @@ export default async function sendEmailViaResend(
 ) {
   if (options.react) {
     const { data, error } = await resend!.emails.send({
-      from: options.from || "noreply@example.com",
+      from: "Nagmani <nagmani@email.nagmaniupadhyay.com.np>",
       to: options.to,
       subject: options.subject!,
       react: options.react,
@@ -15,7 +15,7 @@ export default async function sendEmailViaResend(
     return { data, error };
   } else if (options.html) {
     const { data, error } = await resend!.emails.send({
-      from: options.from || "noreply@example.com",
+      from: "Nagmani <nagmani@email.nagmaniupadhyay.com.np>",
       to: options.to,
       subject: options.subject!,
       react: options.html,

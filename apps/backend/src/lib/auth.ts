@@ -40,7 +40,8 @@ export const auth = betterAuth({
         if (type === "sign-in") {
           console.log("signin");
         } else if (type === "email-verification") {
-          sendEmail({
+          //TODO: Error handling should be done here
+          await sendEmail({
             to: email,
             react: OtpTemplate({ otp }),
             subject: "email-verification Otp",
