@@ -128,7 +128,8 @@
               docker compose -f docker-compose-deploy.yml up -d --no-deps web
 
               # Verify health
-              curl -f http://localhost:5001/health || exit 1
+              sleep 5
+              curl -f --retry 3 --retry-delay 2 http://localhost:5001/health || exit 1
 
               # Clean up old images
               docker image prune -f
