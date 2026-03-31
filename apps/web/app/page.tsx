@@ -1,5 +1,6 @@
 import { HeroSection } from "@/components/hero-section";
 import { BentoGrid } from "@/components/bento-grid";
+
 import { ProductShowcase } from "@/components/product-showcase";
 import { FAQSection } from "@/components/faq-section";
 import { CTASection } from "@/components/cta-section";
