@@ -123,13 +123,16 @@
               # Run database migrations
               docker compose -f docker-compose-deploy.yml run --rm backend sh -c "cd packages/database && npx prisma migrate deploy"
 
-              # Restart services
+              # Restart services , assuming deps are already running
               docker compose -f docker-compose-deploy.yml up -d --no-deps backend
               docker compose -f docker-compose-deploy.yml up -d --no-deps web
 
-              # Verify health
+              # check health of backend  
               sleep 5
               curl -f --retry 3 --retry-delay 2 http://localhost:5001/health || exit 1
 
+              # check health of web
+              curl -f --retry 3 --retry-delay 2 http://localhost:5000/api/health || exit 1
+              
               # Clean up old images
               docker image prune -f

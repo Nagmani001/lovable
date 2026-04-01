@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import fs from "fs";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { StreamChunk } from "@repo/common/types";
 import { ToolExecutor } from "../tools/executor.js";
@@ -60,10 +59,6 @@ export async function runAgentLoop(
 
     params.onStream({ type: "status", status: "thinking" });
 
-    fs.writeFileSync(
-      `/home/nagmani/root/temp/messages${iteration}.json`,
-      JSON.stringify(messages, null, 2),
-    );
     let response;
 
     // To avoid rate limiting by gemini

@@ -41,11 +41,12 @@ export const auth = betterAuth({
           console.log("signin");
         } else if (type === "email-verification") {
           //TODO: Error handling should be done here
-          await sendEmail({
+          let response = await sendEmail({
             to: email,
             react: OtpTemplate({ otp }),
             subject: "email-verification Otp",
           });
+          console.log(response);
         } else {
           console.log("password reset");
         }
