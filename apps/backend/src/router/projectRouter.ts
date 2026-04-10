@@ -17,14 +17,13 @@ projectRouter.post("/create", async (req: Request, res: Response) => {
       return;
     }
 
-    const { prompt, model } = parsed.data;
+    const { prompt } = parsed.data;
     const userId = req.userId!;
 
     const project = await prisma.project.create({
       data: {
         title: prompt.substring(0, 100),
         initialPrompt: prompt,
-        model: model || "claude",
         userId,
       },
     });

@@ -8,7 +8,6 @@ import type { ContextManager } from "../context/context-manager.js";
 
 interface AgentLoopParams {
   openRouterApiKey: string;
-  model: string;
   messages: ChatCompletionMessageParam[];
   sandbox: import("e2b").Sandbox;
   projectBasePath: string;
@@ -65,15 +64,13 @@ export async function runAgentLoop(
       `/home/nagmani/root/temp/messages${iteration}.json`,
       JSON.stringify(messages, null, 2),
     );
-    */
+     * */
 
     let response;
 
-    // To avoid rate limiting by gemini
     while (true) {
       try {
         response = await client.chat.completions.create({
-          // open router  model: "gemini-3-flash-preview",
           model: "gpt-4o-mini",
           max_completion_tokens: 8096,
           messages,

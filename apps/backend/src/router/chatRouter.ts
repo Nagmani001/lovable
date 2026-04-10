@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { getParam, resolveModelId } from "../lib/utils";
+import { getParam } from "../lib/utils";
 import { prisma } from "@repo/database/client";
 import { chatMessageSchema } from "@repo/common/zod";
 import { StreamChunk } from "@repo/common/types";
@@ -26,8 +26,6 @@ chatRouter.post("/:projectId", async (req: Request, res: Response) => {
       res.status(404).json({ message: "Project not found" });
       return;
     }
-
-    const modelId = resolveModelId(project.model);
 
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -66,7 +64,6 @@ chatRouter.post("/:projectId", async (req: Request, res: Response) => {
     const updatedMessages = await orchestrator.handleUserMessage({
       projectId,
       message,
-      model: modelId,
       conversationHistory: llmMessages,
       onStream,
     });

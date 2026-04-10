@@ -76,7 +76,6 @@ export class Orchestrator {
   async handleUserMessage(params: {
     projectId: string;
     message: string;
-    model?: string;
     conversationHistory: ChatCompletionMessageParam[];
     onStream: (chunk: StreamChunk) => void;
     consoleLogs?: string[];
@@ -116,7 +115,6 @@ export class Orchestrator {
 
     const updatedMessages = await runAgentLoop({
       openRouterApiKey: this.config.openRouterApiKey,
-      model: params.model || this.config.defaultModel,
       messages,
       sandbox: entry.sandbox,
       projectBasePath: this.config.projectBasePath,

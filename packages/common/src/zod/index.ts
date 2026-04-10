@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const createProjectSchema = z.object({
   prompt: z.string(),
-  model: z.enum(["openai", "claude", "gemini"]),
 });
 
 export const chatMessageSchema = z.object({

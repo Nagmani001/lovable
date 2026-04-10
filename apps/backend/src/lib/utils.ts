@@ -16,12 +16,3 @@ export function getParam(req: Request, name: string): string {
   if (typeof val === "string") return val;
   throw new Error(`Missing param: ${name}`);
 }
-
-export function resolveModelId(shortName: string): string {
-  const modelMap: Record<string, string> = {
-    claude: "anthropic/claude-3.5-sonnet",
-    openai: "gpt-4.1",
-    gemini: "google/gemini-3-flash-preview",
-  };
-  return modelMap[shortName] || shortName;
-}

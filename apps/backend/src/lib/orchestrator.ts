@@ -11,8 +11,6 @@ export function initOrchestrator(): Orchestrator {
   const config: OrchestratorConfig = {
     e2bApiKey: process.env.E2B_API_KEY || "",
     openRouterApiKey: process.env.OPENROUTER_API_KEY || "",
-    defaultModel:
-      process.env.DEFAULT_MODEL || "anthropic/claude-sonnet-4-20250514",
     s3Bucket: process.env.S3_BUCKET || "lovable-projects",
     s3Region: process.env.AWS_REGION || "us-east-1",
     awsAccessKeyId: process.env.AWS_ACCESS_KEY_ID || "",

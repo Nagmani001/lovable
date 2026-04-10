@@ -18,7 +18,6 @@ export interface SandboxEntry {
 export interface OrchestratorConfig {
   e2bApiKey: string;
   openRouterApiKey: string;
-  defaultModel: string;
   s3Bucket: string;
   s3Region: string;
   awsAccessKeyId: string;
