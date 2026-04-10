@@ -23,6 +23,7 @@ export default function ProjectWorkspacePage({
   const [vscodeUrl, setVscodeUrl] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(true);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [showProcessingScreen, setShowProcessingScreen] = useState(false);
   const autoSentRef = useRef(false);
 
   const { messages, sendMessage, isStreaming, agentStatus, loadHistory } =
@@ -47,9 +48,11 @@ export default function ProjectWorkspacePage({
 
         if (visible.length > 0) {
           loadHistory(visible);
+          setShowProcessingScreen(false);
         }
 
         if (history.length === 0 && !autoSentRef.current) {
+          setShowProcessingScreen(true);
           autoSentRef.current = true;
           sendMessage(prompt);
         }
@@ -65,6 +68,16 @@ export default function ProjectWorkspacePage({
 
     connect();
   }, [project, loadHistory]);
+
+  useEffect(() => {
+    if (!showProcessingScreen || !autoSentRef.current) {
+      return;
+    }
+
+    if (!isStreaming && messages.length > 0) {
+      setShowProcessingScreen(false);
+    }
+  }, [showProcessingScreen, isStreaming, messages.length]);
 
   if (isConnecting) {
     return (
@@ -108,7 +121,13 @@ export default function ProjectWorkspacePage({
         </div>
 
         <div className="flex-1 flex flex-col min-h-0">
-          <WorkspacePanel previewUrl={previewUrl} vscodeUrl={vscodeUrl} />
+          <WorkspacePanel
+            previewUrl={previewUrl}
+            vscodeUrl={vscodeUrl}
+            showProcessingScreen={showProcessingScreen}
+            processingPrompt={prompt}
+            agentStatus={agentStatus}
+          />
         </div>
       </div>
     </div>

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Send, Loader2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { ChatMessage } from "@/hooks/use-chat";
 
 interface ChatPanelProps {
@@ -68,17 +70,103 @@ export function ChatPanel({
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[85%] rounded-lg px-4 py-2.5 text-sm whitespace-pre-wrap ${
+              className={`max-w-[85%] rounded-lg px-4 py-2.5 text-sm ${
                 msg.role === "user"
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-foreground"
               }`}
             >
-              {msg.content || (
+              {!msg.content ? (
                 <span className="flex items-center gap-2 text-muted-foreground">
                   <Loader2 className="h-3 w-3 animate-spin" />
                   Thinking...
                 </span>
+              ) : msg.role === "user" ? (
+                <p className="whitespace-pre-wrap">{msg.content}</p>
+              ) : (
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    h1: ({ node, ...props }) => (
+                      <h1
+                        className="mb-3 text-lg font-semibold tracking-tight"
+                        {...props}
+                      />
+                    ),
+                    h2: ({ node, ...props }) => (
+                      <h2 className="mb-2 text-base font-semibold" {...props} />
+                    ),
+                    h3: ({ node, ...props }) => (
+                      <h3 className="mb-2 text-sm font-semibold" {...props} />
+                    ),
+                    p: ({ node, ...props }) => (
+                      <p
+                        className="mb-3 whitespace-pre-wrap last:mb-0"
+                        {...props}
+                      />
+                    ),
+                    ul: ({ node, ...props }) => (
+                      <ul
+                        className="mb-3 list-disc space-y-1 pl-5 last:mb-0"
+                        {...props}
+                      />
+                    ),
+                    ol: ({ node, ...props }) => (
+                      <ol
+                        className="mb-3 list-decimal space-y-1 pl-5 last:mb-0"
+                        {...props}
+                      />
+                    ),
+                    li: ({ node, ...props }) => (
+                      <li className="pl-1" {...props} />
+                    ),
+                    a: ({ node, ...props }) => (
+                      <a
+                        className="text-primary underline underline-offset-2"
+                        target="_blank"
+                        rel="noreferrer"
+                        {...props}
+                      />
+                    ),
+                    code: ({ node, className, children, ...props }) => {
+                      const isBlock = Boolean(className);
+
+                      if (isBlock) {
+                        return (
+                          <code
+                            className="block overflow-x-auto rounded-md bg-background px-3 py-2 font-mono text-[13px]"
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        );
+                      }
+
+                      return (
+                        <code
+                          className="rounded bg-background px-1.5 py-0.5 font-mono text-[13px]"
+                          {...props}
+                        >
+                          {children}
+                        </code>
+                      );
+                    },
+                    pre: ({ node, ...props }) => (
+                      <pre
+                        className="mb-3 overflow-x-auto rounded-md bg-background p-0 last:mb-0"
+                        {...props}
+                      />
+                    ),
+                    blockquote: ({ node, ...props }) => (
+                      <blockquote
+                        className="mb-3 border-l-2 border-border pl-3 italic text-muted-foreground last:mb-0"
+                        {...props}
+                      />
+                    ),
+                  }}
+                >
+                  {msg.content}
+                </ReactMarkdown>
               )}
             </div>
           </div>

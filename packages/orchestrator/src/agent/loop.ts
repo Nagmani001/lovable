@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import fs from "fs";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { StreamChunk } from "@repo/common/types";
 import { ToolExecutor } from "../tools/executor.js";
@@ -25,7 +26,7 @@ export async function runAgentLoop(
   // local llm
   const client = new OpenAI({
     apiKey: params.openRouterApiKey,
-    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    //    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     // baseURL: "https://openrouter.ai/api/v1",
   });
 
@@ -59,6 +60,11 @@ export async function runAgentLoop(
 
     params.onStream({ type: "status", status: "thinking" });
 
+    fs.writeFileSync(
+      `/home/nagmani/root/temp/messages${iteration}.json`,
+      JSON.stringify(messages, null, 2),
+    );
+
     let response;
 
     // To avoid rate limiting by gemini
@@ -66,7 +72,7 @@ export async function runAgentLoop(
       try {
         response = await client.chat.completions.create({
           // open router  model: "gemini-3-flash-preview",
-          model: "gemini-3-flash-preview",
+          model: "gpt-4o-mini",
           max_completion_tokens: 8096,
           messages,
           tools: toolDefinitions as OpenAI.ChatCompletionTool[],

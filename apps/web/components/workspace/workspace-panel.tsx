@@ -2,17 +2,29 @@
 
 import { useState } from "react";
 import { Monitor, Code, ExternalLink, RefreshCw } from "lucide-react";
+import { WorkspaceProcessingScreen } from "./workspace-processing-screen";
 
 interface WorkspacePanelProps {
   previewUrl: string | null;
   vscodeUrl: string | null;
+  showProcessingScreen?: boolean;
+  processingPrompt?: string;
+  agentStatus?: string;
 }
 
-export function WorkspacePanel({ previewUrl, vscodeUrl }: WorkspacePanelProps) {
+export function WorkspacePanel({
+  previewUrl,
+  vscodeUrl,
+  showProcessingScreen = false,
+  processingPrompt = "",
+  agentStatus = "idle",
+}: WorkspacePanelProps) {
   const [activeTab, setActiveTab] = useState<"preview" | "code">("preview");
   const [previewKey, setPreviewKey] = useState(0);
+  const previewReady = Boolean(previewUrl) && !showProcessingScreen;
 
   const refreshPreview = () => {
+    if (!previewReady) return;
     setPreviewKey((k) => k + 1);
   };
 
@@ -46,7 +58,7 @@ export function WorkspacePanel({ previewUrl, vscodeUrl }: WorkspacePanelProps) {
         </div>
 
         <div className="flex items-center gap-1">
-          {activeTab === "preview" && (
+          {activeTab === "preview" && previewReady && (
             <button
               onClick={refreshPreview}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -57,11 +69,19 @@ export function WorkspacePanel({ previewUrl, vscodeUrl }: WorkspacePanelProps) {
           )}
           <a
             href={
-              activeTab === "preview" ? previewUrl || "#" : vscodeUrl || "#"
+              activeTab === "preview"
+                ? previewReady
+                  ? previewUrl || "#"
+                  : "#"
+                : vscodeUrl || "#"
             }
             target="_blank"
             rel="noopener noreferrer"
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className={`p-1.5 rounded-md transition-colors ${
+              activeTab === "preview" && !previewReady
+                ? "pointer-events-none text-muted-foreground/40"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
+            }`}
             title="Open in new tab"
           >
             <ExternalLink className="h-3.5 w-3.5" />
@@ -70,8 +90,19 @@ export function WorkspacePanel({ previewUrl, vscodeUrl }: WorkspacePanelProps) {
       </div>
 
       {/* Iframe panels - both stay mounted so state is preserved */}
-      <div className="flex-1 relative bg-white">
-        {previewUrl ? (
+      <div className="relative flex-1 bg-background">
+        {showProcessingScreen ? (
+          <div
+            className={`absolute inset-0 ${
+              activeTab === "preview" ? "block" : "hidden"
+            }`}
+          >
+            <WorkspaceProcessingScreen
+              prompt={processingPrompt}
+              agentStatus={agentStatus}
+            />
+          </div>
+        ) : previewUrl ? (
           <iframe
             key={previewKey}
             src={previewUrl}

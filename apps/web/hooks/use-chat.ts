@@ -109,6 +109,7 @@ export function useChat(projectId: string | null) {
           }
         }
       } catch (err) {
+        console.log(err);
         assistantText += `\n\nConnection error. Please try again.`;
         setMessages((prev) =>
           prev.map((m) =>
