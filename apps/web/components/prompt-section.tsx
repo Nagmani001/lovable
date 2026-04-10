@@ -7,15 +7,8 @@ import { Loader2 } from "lucide-react";
 import { PromptInput } from "@repo/ui/components/prompt-input";
 import { createProject } from "@/lib/api";
 
-const MODEL_OPTIONS = [
-  { value: "claude", label: "Claude Sonnet" },
-  { value: "openai", label: "GPT-4o" },
-  { value: "gemini", label: "Gemini Flash" },
-] as const;
-
 export function PromptSection() {
   const [prompt, setPrompt] = useState("");
-  const [model, setModel] = useState<string>("claude");
   const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
 
@@ -25,7 +18,7 @@ export function PromptSection() {
 
     try {
       setIsCreating(true);
-      const result = await createProject(trimmed, model);
+      const result = await createProject(trimmed);
       router.push(`/project/${result.projectId}/${result.prompt}`);
     } catch (err) {
       console.error("Failed to create project:", err);
@@ -50,27 +43,6 @@ export function PromptSection() {
         transition={{ duration: 0.6, delay: 0.1 }}
         className="w-full max-w-2xl"
       >
-        <div className="flex items-center gap-2 mb-3">
-          <label
-            htmlFor="model-select"
-            className="text-sm text-muted-foreground"
-          >
-            Model:
-          </label>
-          <select
-            id="model-select"
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
-            className="text-sm bg-background border border-border rounded-md px-2 py-1 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            {MODEL_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <PromptInput
           value={prompt}
           onChange={setPrompt}

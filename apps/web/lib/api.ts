@@ -2,13 +2,12 @@ import { toast } from "@repo/ui/lib/toast";
 import { BASE_URL } from "./util";
 import axios from "axios";
 
-export async function createProject(prompt: string, model: string) {
+export async function createProject(prompt: string) {
   try {
     const res = await axios.post(
       `${BASE_URL}/api/v1/project/create`,
       {
         prompt,
-        model,
       },
       {
         withCredentials: true,
