@@ -60,10 +60,12 @@ export async function runAgentLoop(
 
     params.onStream({ type: "status", status: "thinking" });
 
+    /*
     fs.writeFileSync(
       `/home/nagmani/root/temp/messages${iteration}.json`,
       JSON.stringify(messages, null, 2),
     );
+    */
 
     let response;
 
