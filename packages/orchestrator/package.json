@@ -5,7 +5,8 @@
   "type": "module",
   "main": "./src/index.ts",
   "exports": {
-    "./orchestrator": "./src/index.ts"
+    "./orchestrator": "./src/index.ts",
+    "./tools": "./src/tools/executor.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*"

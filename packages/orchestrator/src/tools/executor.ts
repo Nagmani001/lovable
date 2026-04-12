@@ -179,6 +179,7 @@ export class ToolExecutor {
       }
 
       case "lov-line-replace": {
+        console.log("args", args);
         const filePath = this.resolvePath(args.file_path as string);
         const hintFirst = args.first_replaced_line as number;
         const hintLast = args.last_replaced_line as number;

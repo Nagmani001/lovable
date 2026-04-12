@@ -1,0 +1,20 @@
+{
+    "name": "@repo/tool-tests",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "test": "vitest run",
+        "test:watch": "vitest"
+    },
+    "dependencies": {
+        "@repo/common": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
+        "@repo/orchestrator": "workspace:*",
+        "@types/node": "^22.0.0",
+        "dotenv": "^16.0.0",
+        "e2b": "^2.13.0",
+        "tsx": "^4.0.0",
+        "typescript": "^5.0.0",
+        "vitest": "^2.0.0"
+    }
+}

@@ -5,10 +5,8 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const TEMPLATE_DIR = resolve(
-  __dirname,
-  "../../../lovable-template/src/starter-project-lovable/",
-);
+const TEMPLATE_DIR =
+  "/home/nagmani/root/projects/lovable/packages/e2b-template/src/starter-project-lovable/";
 
 /**
  * Files whose full content is tracked in context (relative to project root).
