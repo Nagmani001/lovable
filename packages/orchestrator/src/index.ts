@@ -8,6 +8,7 @@ import { ProjectStorage } from "./storage/s3.js";
 import { ProjectDeployer } from "./deploy/deployer.js";
 import { runAgentLoop } from "./agent/loop.js";
 import { ContextManager } from "./context/context-manager.js";
+import { classifyIntent } from "./context/intent-classifier.js";
 
 export class Orchestrator {
   private sandboxManager: SandboxManager;
@@ -103,7 +104,22 @@ export class Orchestrator {
     // the history ends with tool messages, so idx === arr.length - 1 never matches.
     // The injected copy is only used for the LLM call — it is never stored back in
     // the conversation history, so context is always fresh and clean on every turn.
-    const usefulContext = contextManager.generateContext();
+    //
+    // First message → always use the fixed initialization context (full project
+    // overview). Subsequent messages → classify intent and emit a targeted context.
+    //
+    // NOTE: The router saves the current user message to DB *before* calling
+    // handleUserMessage, so conversationHistory always has ≥1 entry. We detect
+    // the first turn by the absence of any assistant message in history.
+    const isFirstTurn = !params.conversationHistory.some(
+      (m) => m.role === "assistant",
+    );
+    const usefulContext = isFirstTurn
+      ? contextManager.generateInitializationContext()
+      : contextManager.generateContext(
+          classifyIntent(params.message),
+          params.message,
+        );
 
     const lastUserIdx = params.conversationHistory.reduce(
       (acc, msg, idx) => (msg.role === "user" ? idx : acc),

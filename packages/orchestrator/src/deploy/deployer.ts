@@ -21,16 +21,11 @@ export class ProjectDeployer {
     this.bucket = config.bucket;
   }
 
-  /**
-   * Build the project inside the sandbox and upload the dist to S3.
-   * Returns the deployed URL.
-   */
   async deploy(
     sandbox: Sandbox,
     projectId: string,
     projectBasePath: string = "/home/user/project",
   ): Promise<string> {
-    // Build the project
     const buildResult = await sandbox.commands.run(
       `cd ${projectBasePath} && npm run build`,
       { timeoutMs: 120_000 },
@@ -42,17 +37,13 @@ export class ProjectDeployer {
       );
     }
 
-    // Create a tar of the dist directory
     await sandbox.commands.run(
       `cd ${projectBasePath} && tar -cf /tmp/dist.tar -C dist .`,
       { timeoutMs: 15_000 },
     );
 
-    // Read the tar from sandbox
     const distTarContent = await sandbox.files.read("/tmp/dist.tar");
 
-    // Upload the dist tar to S3 (for a real deployment, you'd
-    // extract and upload individual files to a static hosting bucket)
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,

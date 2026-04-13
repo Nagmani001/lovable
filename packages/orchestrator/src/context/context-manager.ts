@@ -1,23 +1,18 @@
-//BUG: written by AI , not working currently  , i always send the initial context .
 import { readFileSync, readdirSync, statSync } from "fs";
 import { resolve, dirname, relative, basename, extname } from "path";
 import { fileURLToPath } from "url";
+import type { Intent } from "./intent-classifier.js";
+import { initialContext } from "./initial-context.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const TEMPLATE_DIR = resolve(
   __dirname,
-  "../../../lovable-template/src/starter-project-lovable/",
+  "../../../e2b-template/src/starter-project-lovable/",
 );
 
-/*
-const TEMPLATE_DIR =
-  "/home/nagmani/root/projects/lovable/packages/e2b-template/src/starter-project-lovable/";
-*/
+const RECENT_WRITES_LIMIT = 5;
 
-/**
- * Files whose full content is tracked in context (relative to project root).
- */
 const BASELINE_CONTENT_FILES = [
   "package.json",
   "tailwind.config.ts",
@@ -33,9 +28,6 @@ const BASELINE_CONTENT_FILES = [
   "src/components/NavLink.tsx",
 ];
 
-/**
- * Extension-to-language map for code fences.
- */
 function langForExt(filePath: string): string {
   const ext = extname(filePath).toLowerCase();
   const map: Record<string, string> = {
@@ -50,15 +42,11 @@ function langForExt(filePath: string): string {
   return map[ext] || "";
 }
 
-/**
- * Recursively collects all file paths under a directory, relative to `base`.
- */
 function walkDir(dir: string, base: string): string[] {
   const results: string[] = [];
   try {
     const entries = readdirSync(dir);
     for (const entry of entries) {
-      // Skip noise directories
       if (
         entry === "node_modules" ||
         entry === ".git" ||
@@ -86,31 +74,57 @@ function walkDir(dir: string, base: string): string[] {
   return results;
 }
 
+function extractTargetFiles(message: string, fileTree: Set<string>): string[] {
+  // strip punctuation, lowercase
+  const words = message
+    .toLowerCase()
+    .replace(/['"`.]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 2);
+
+  const candidates: string[] = [];
+  for (const filePath of fileTree) {
+    const fileBase = basename(filePath)
+      .toLowerCase()
+      .replace(/\.(tsx?|jsx?|css|json|html)$/, "");
+    for (const word of words) {
+      if (fileBase === word || filePath.toLowerCase().includes(word)) {
+        if (!candidates.includes(filePath)) {
+          candidates.push(filePath);
+        }
+      }
+    }
+  }
+  return candidates
+    .sort((a, b) => {
+      const aSrc = a.startsWith("src/") ? 0 : 1;
+      const bSrc = b.startsWith("src/") ? 0 : 1;
+      return aSrc - bSrc;
+    })
+    .slice(0, 3);
+}
+
 export class ContextManager {
-  /** Relative path -> full file content (for important/tracked files) */
   files: Map<string, string> = new Map();
-
-  /** All known file paths in the project (for tree display) */
   fileTree: Set<string> = new Set();
-
-  /** shadcn UI component names (name only, not content) */
   uiComponents: string[] = [];
+
+  private recentWrites: string[] = [];
+
+  private consoleLogs: string[] = [];
+
+  private networkRequests: string[] = [];
 
   private constructor() {}
 
-  /**
-   * Create a ContextManager seeded from the starter template on local disk.
-   */
   static createFromBaseline(): ContextManager {
     const ctx = new ContextManager();
 
-    // Walk the template directory to build the file tree
     const allFiles = walkDir(TEMPLATE_DIR, TEMPLATE_DIR);
     for (const f of allFiles) {
       ctx.fileTree.add(f);
     }
 
-    // Read content for tracked baseline files
     for (const relPath of BASELINE_CONTENT_FILES) {
       try {
         const content = readFileSync(resolve(TEMPLATE_DIR, relPath), "utf-8");
@@ -120,14 +134,13 @@ export class ContextManager {
       }
     }
 
-    // Discover UI component names from src/components/ui/
     const uiDir = resolve(TEMPLATE_DIR, "src/components/ui");
     try {
       const uiFiles = readdirSync(uiDir);
       ctx.uiComponents = uiFiles
         .filter((f) => f.endsWith(".tsx") || f.endsWith(".ts"))
         .map((f) => basename(f, extname(f)))
-        .filter((name) => name !== "use-toast") // use-toast is a hook, not a component
+        .filter((name) => name !== "use-toast")
         .sort();
     } catch {
       // No UI dir
@@ -136,142 +149,316 @@ export class ContextManager {
     return ctx;
   }
 
-  // ═══════════════════════════════════════════
-  // MUTATION METHODS
-  // ═══════════════════════════════════════════
-
-  /**
-   * Track a file write (new file or update).
-   */
   applyWrite(path: string, content: string): void {
     const rel = this.normalizePath(path);
     this.fileTree.add(rel);
     this.files.set(rel, content);
+    this.pushRecentWrite(rel);
   }
 
-  /**
-   * Track a file deletion.
-   */
   applyDelete(path: string): void {
     const rel = this.normalizePath(path);
     this.fileTree.delete(rel);
     this.files.delete(rel);
   }
 
-  /**
-   * Track a file rename/move.
-   */
   applyRename(from: string, to: string): void {
     const relFrom = this.normalizePath(from);
     const relTo = this.normalizePath(to);
 
-    // Move content if tracked
     const content = this.files.get(relFrom);
     if (content !== undefined) {
       this.files.delete(relFrom);
       this.files.set(relTo, content);
     }
 
-    // Update tree
     this.fileTree.delete(relFrom);
     this.fileTree.add(relTo);
+    this.pushRecentWrite(relTo);
   }
 
-  /**
-   * Track a line-replace operation (update content for a tracked file).
-   */
   applyLineReplace(path: string, newFullContent: string): void {
     const rel = this.normalizePath(path);
     if (this.files.has(rel)) {
       this.files.set(rel, newFullContent);
     }
+    this.pushRecentWrite(rel);
   }
 
-  // ═══════════════════════════════════════════
-  // CONTEXT GENERATION
-  // ═══════════════════════════════════════════
+  storeConsoleLogs(logs: string[]): void {
+    this.consoleLogs = logs;
+  }
 
-  /**
-   * Generate the full <useful-context> block to inject into the user message.
-   */
-  generateContext(): string {
+  storeNetworkRequests(requests: string[]): void {
+    this.networkRequests = requests;
+  }
+
+  generateInitializationContext(): string {
+    return initialContext;
+  }
+
+  generateContext(intent: Intent, userMessage: string): string {
     const sections: string[] = [];
 
-    // 1. File tree
-    sections.push(this.generateFileTree());
+    switch (intent) {
+      case "ui_styling": {
+        sections.push(this.sectionFileTree());
+        sections.push(this.sectionDesignSystem());
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0)
+          sections.push(this.sectionTargetFiles("Target Files", targets));
+        const recent = this.sectionRecentlyModified(targets);
+        if (recent) sections.push(recent);
+        break;
+      }
 
-    // 2. Dependencies from package.json
-    sections.push(this.generateDependencies());
+      case "animation": {
+        sections.push(this.sectionFileTree());
+        sections.push(this.sectionDesignSystem());
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0)
+          sections.push(this.sectionTargetFiles("Target Files", targets));
+        break;
+      }
 
-    // 3. UI component list
-    if (this.uiComponents.length > 0) {
-      sections.push(this.generateUIComponents());
+      case "responsive_layout": {
+        sections.push(this.sectionFileTree());
+        sections.push(this.sectionDesignSystem());
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0)
+          sections.push(this.sectionTargetFiles("Target Files", targets));
+        break;
+      }
+
+      case "new_feature": {
+        sections.push(this.sectionFileTree());
+        sections.push(this.sectionDesignSystem());
+        sections.push(this.sectionAppStructure());
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0)
+          sections.push(
+            this.sectionTargetFiles("Related Existing Components", targets),
+          );
+        const recent = this.sectionRecentlyModified(targets);
+        if (recent) sections.push(recent);
+        break;
+      }
+
+      case "bug_fix": {
+        sections.push(this.sectionFileTree());
+        const consoleSec = this.sectionConsoleLogs();
+        if (consoleSec) sections.push(consoleSec);
+        const networkSec = this.sectionNetworkRequests();
+        if (networkSec) sections.push(networkSec);
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0)
+          sections.push(this.sectionTargetFiles("Target Files", targets));
+        const recent = this.sectionRecentlyModified(targets);
+        if (recent) sections.push(recent);
+        break;
+      }
+
+      case "logic_state": {
+        sections.push(this.sectionFileTree());
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0)
+          sections.push(this.sectionTargetFiles("Target Files", targets));
+        const sharedState = this.sectionSharedState();
+        if (sharedState) sections.push(sharedState);
+        const recent = this.sectionRecentlyModified(targets);
+        if (recent) sections.push(recent);
+        break;
+      }
+
+      case "data_api": {
+        sections.push(this.sectionFileTree());
+        sections.push(this.sectionAppStructure());
+        const dataLayer = this.sectionDataLayer();
+        if (dataLayer) sections.push(dataLayer);
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0)
+          sections.push(this.sectionTargetFiles("Target Files", targets));
+        const types = this.sectionTypes();
+        if (types) sections.push(types);
+        break;
+      }
+
+      case "navigation_routing": {
+        sections.push(this.sectionFileTree());
+        sections.push(this.sectionAppStructure());
+        const navComponents = this.sectionNavComponents();
+        if (navComponents) sections.push(navComponents);
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0)
+          sections.push(this.sectionTargetFiles("Target Page", targets));
+        break;
+      }
+
+      case "refactor": {
+        sections.push(this.sectionFileTree());
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0)
+          sections.push(this.sectionTargetFiles("Target Files", targets));
+        const recent = this.sectionRecentlyModified(targets);
+        if (recent) sections.push(recent);
+        break;
+      }
+
+      case "typescript_types": {
+        sections.push(this.sectionFileTree());
+        const types = this.sectionTypes();
+        if (types) sections.push(types);
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0)
+          sections.push(this.sectionTargetFiles("Target Files", targets));
+        break;
+      }
+
+      case "content_copy": {
+        // Minimal context — just the file containing the text.
+        const targets = extractTargetFiles(userMessage, this.fileTree);
+        if (targets.length > 0) {
+          sections.push(this.sectionTargetFiles("Target Files", targets));
+        } else {
+          // Fall back to file tree so LLM can locate the right file itself.
+          sections.push(this.sectionFileTree());
+        }
+        break;
+      }
+
+      case "question":
+      default: {
+        sections.push(this.sectionFileTree());
+        sections.push(this.sectionPackageInfo());
+        break;
+      }
     }
 
-    // 4. Current code (tracked file contents)
-    sections.push(this.generateCurrentCode());
-
-    return `<useful-context>\n${sections.join("\n\n")}\n</useful-context>`;
+    const body = sections.filter(Boolean).join("\n\n");
+    return `<useful-context>\n${body}\n</useful-context>`;
   }
 
-  private generateFileTree(): string {
+  private sectionFileTree(): string {
     const sorted = [...this.fileTree].sort();
     const lines = sorted.map((f) => `  ${f}`);
     return `## File Structure\n${lines.join("\n")}`;
   }
 
-  private generateDependencies(): string {
-    const pkgContent = this.files.get("package.json");
-    if (!pkgContent)
-      return "## Installed Dependencies\n  (no package.json found)";
-
-    try {
-      const pkg = JSON.parse(pkgContent) as {
-        dependencies?: Record<string, string>;
-        devDependencies?: Record<string, string>;
-      };
-      const deps = pkg.dependencies || {};
-      const lines = Object.entries(deps)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([name, version]) => `  ${name}: ${version}`);
-      return `## Installed Dependencies\n${lines.join("\n")}`;
-    } catch {
-      return "## Installed Dependencies\n  (could not parse package.json)";
+  private sectionDesignSystem(): string {
+    const parts: string[] = ["## Design System"];
+    for (const key of ["src/index.css", "tailwind.config.ts"]) {
+      const content = this.files.get(key);
+      if (content) {
+        const lang = langForExt(key);
+        parts.push(`### ${key}\n\`\`\`${lang}\n${content}\n\`\`\``);
+      }
     }
+    return parts.length > 1 ? parts.join("\n\n") : "";
   }
 
-  private generateUIComponents(): string {
-    return `## Available UI Components (import from @/components/ui/)\n${this.uiComponents.join(", ")}`;
+  private sectionAppStructure(): string {
+    const content = this.files.get("src/App.tsx");
+    if (!content) return "";
+    return `## App Structure\n### src/App.tsx\n\`\`\`tsx\n${content}\n\`\`\``;
   }
 
-  private generateCurrentCode(): string {
-    const sections: string[] = ["## Current Code"];
+  private sectionTargetFiles(heading: string, filePaths: string[]): string {
+    const parts: string[] = [`## ${heading}`];
+    for (const p of filePaths) {
+      const content = this.files.get(p);
+      if (content) {
+        const lang = langForExt(p);
+        parts.push(`### ${p}\n\`\`\`${lang}\n${content}\n\`\`\``);
+      }
+    }
+    return parts.length > 1 ? parts.join("\n\n") : "";
+  }
 
-    // Sort files for consistent output
-    const sortedFiles = [...this.files.entries()].sort(([a], [b]) =>
-      a.localeCompare(b),
+  private sectionRecentlyModified(excludePaths: string[] = []): string {
+    const recent = this.recentWrites
+      .filter((p) => !excludePaths.includes(p))
+      .slice(-RECENT_WRITES_LIMIT);
+    if (recent.length === 0) return "";
+    return this.sectionTargetFiles("Recently Modified", recent);
+  }
+
+  private sectionSharedState(): string {
+    // Look for context files, stores, or hooks
+    const candidates = [...this.fileTree].filter(
+      (p) =>
+        p.match(/\/(context|store|stores|hooks|state)\//i) ||
+        p.match(/(use[A-Z][a-zA-Z]+|Store|Context|Provider)\.(tsx?|jsx?)$/),
     );
-
-    for (const [path, content] of sortedFiles) {
-      // Skip package.json from code section (already shown in dependencies)
-      if (path === "package.json") continue;
-
-      const lang = langForExt(path);
-      sections.push(`### ${path}\n\`\`\`${lang}\n${content}\n\`\`\``);
-    }
-
-    return sections.join("\n\n");
+    if (candidates.length === 0) return "";
+    return this.sectionTargetFiles(
+      "Shared State / Utilities",
+      candidates.slice(0, 3),
+    );
   }
 
-  /**
-   * Normalize a file path to be relative (strip leading slash or project base path prefix).
-   */
+  private sectionDataLayer(): string {
+    const candidates = [...this.fileTree].filter(
+      (p) =>
+        p.match(/\/(api|lib|services|utils|hooks)\//i) ||
+        p.match(/(api|client|supabase|firebase|service|query)\.(tsx?|jsx?)$/i),
+    );
+    if (candidates.length === 0) return "";
+    return this.sectionTargetFiles(
+      "Existing Data Layer",
+      candidates.slice(0, 4),
+    );
+  }
+
+  private sectionNavComponents(): string {
+    const candidates = [...this.fileTree].filter(
+      (p) =>
+        p.match(
+          /(navbar|nav-bar|sidebar|navigation|header|breadcrumb|menubar)\.(tsx?|jsx?)$/i,
+        ) || p.toLowerCase().includes("navlink"),
+    );
+    if (candidates.length === 0) return "";
+    return this.sectionTargetFiles("Navigation Components", candidates);
+  }
+
+  private sectionTypes(): string {
+    const candidates = [...this.fileTree].filter(
+      (p) =>
+        p.match(/\/types\//i) ||
+        p.endsWith(".d.ts") ||
+        p.match(/types?\.(tsx?|jsx?)$/i),
+    );
+    if (candidates.length === 0) return "";
+    return this.sectionTargetFiles("Types", candidates.slice(0, 4));
+  }
+
+  private sectionPackageInfo(): string {
+    const content = this.files.get("package.json");
+    if (!content) return "";
+    return `## Package Info\n### package.json\n\`\`\`json\n${content}\n\`\`\``;
+  }
+
+  private sectionConsoleLogs(): string {
+    if (this.consoleLogs.length === 0) return "";
+    return `## Console Logs\n${this.consoleLogs.join("\n")}`;
+  }
+
+  private sectionNetworkRequests(): string {
+    if (this.networkRequests.length === 0) return "";
+    return `## Network Requests\n${this.networkRequests.join("\n")}`;
+  }
+
+  private pushRecentWrite(rel: string): void {
+    // Remove existing occurrence to avoid duplicates, then push to end
+    this.recentWrites = this.recentWrites.filter((p) => p !== rel);
+    this.recentWrites.push(rel);
+    if (this.recentWrites.length > RECENT_WRITES_LIMIT) {
+      this.recentWrites.shift();
+    }
+  }
+
   private normalizePath(path: string): string {
-    // Strip leading "./" if present
     let p = path.startsWith("./") ? path.slice(2) : path;
-    // If it's an absolute path, try to make it relative by stripping common prefixes
     if (p.startsWith("/")) {
-      // Look for common sandbox base paths
       const markers = ["/home/user/project/", "/project/"];
       for (const marker of markers) {
         if (p.startsWith(marker)) {
@@ -279,7 +466,6 @@ export class ContextManager {
           break;
         }
       }
-      // If still absolute, just strip the leading slash
       if (p.startsWith("/")) {
         p = p.slice(1);
       }
