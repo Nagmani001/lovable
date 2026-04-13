@@ -98,16 +98,21 @@ export class Orchestrator {
       this.contextManagers.set(params.projectId, contextManager);
     }
 
-    // Generate useful-context and inject into a cloned messages array
+    // Generate useful-context and inject ephemerally into the last user message.
+    // We find the last user message by role (not by position) because after turn 1
+    // the history ends with tool messages, so idx === arr.length - 1 never matches.
+    // The injected copy is only used for the LLM call — it is never stored back in
+    // the conversation history, so context is always fresh and clean on every turn.
     const usefulContext = contextManager.generateContext();
-    const messages: ChatCompletionMessageParam[] =
-      params.conversationHistory.map((msg, idx, arr) => {
-        // Inject into the last user message
-        if (
-          msg.role === "user" &&
-          idx === arr.length - 1 &&
-          typeof msg.content === "string"
-        ) {
+
+    const lastUserIdx = params.conversationHistory.reduce(
+      (acc, msg, idx) => (msg.role === "user" ? idx : acc),
+      -1,
+    );
+
+    const llmMessages: ChatCompletionMessageParam[] =
+      params.conversationHistory.map((msg, idx) => {
+        if (idx === lastUserIdx && typeof msg.content === "string") {
           return { ...msg, content: `${usefulContext}\n\n${msg.content}` };
         }
         return msg;
@@ -115,7 +120,7 @@ export class Orchestrator {
 
     const updatedMessages = await runAgentLoop({
       openRouterApiKey: this.config.openRouterApiKey,
-      messages,
+      messages: llmMessages,
       sandbox: entry.sandbox,
       projectBasePath: this.config.projectBasePath,
       onStream: params.onStream,
@@ -124,7 +129,12 @@ export class Orchestrator {
       contextManager,
     });
 
-    return updatedMessages;
+    // Reconstruct history: original clean messages (no injected context) +
+    // only the NEW messages produced this turn (assistant replies + tool results).
+    const newMessages = updatedMessages.slice(
+      params.conversationHistory.length,
+    );
+    return [...params.conversationHistory, ...newMessages];
   }
 
   /**
