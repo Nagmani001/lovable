@@ -25,7 +25,7 @@ export async function runAgentLoop(
   // local llm
   const client = new OpenAI({
     apiKey: params.openRouterApiKey,
-    //    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
     // baseURL: "https://openrouter.ai/api/v1",
   });
 
@@ -64,22 +64,35 @@ export async function runAgentLoop(
       `/home/nagmani/root/temp/messages${iteration}.json`,
       JSON.stringify(messages, null, 2),
     );
-    */
+     * */
 
     let response;
 
-    while (true) {
-      try {
-        response = await client.chat.completions.create({
-          model: "gpt-4o-mini",
-          max_completion_tokens: 8096,
-          messages,
-          tools: toolDefinitions as OpenAI.ChatCompletionTool[],
-        });
-        break;
-      } catch (err) {
-        console.log("error", err);
-        await new Promise((r) => setTimeout(r, 1500));
+    {
+      let retryCount = 0;
+      while (true) {
+        try {
+          response = await client.chat.completions.create({
+            //          model: "gpt-4o-mini",
+            model: "gemini-2.5-flash-lite",
+            max_completion_tokens: 8096,
+            messages,
+            tools: toolDefinitions as OpenAI.ChatCompletionTool[],
+          });
+          break;
+        } catch (err: any) {
+          if (err?.status === 429) {
+            const delay = Math.min(1500 * Math.pow(2, retryCount), 60000);
+            console.log(
+              `Rate limited (429), retrying in ${delay}ms... (attempt ${retryCount + 1})`,
+            );
+            retryCount++;
+            await new Promise((r) => setTimeout(r, delay));
+          } else {
+            console.log("error", err);
+            throw err;
+          }
+        }
       }
     }
 
