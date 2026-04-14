@@ -82,14 +82,27 @@ export class ToolExecutor {
 
       case "lov-write": {
         const filePath = this.resolvePath(args.file_path as string);
-        const content = args.content as string;
+        let content = args.content as string;
+
+        /*
+       BUG: this issue  is actually flakey
+
+        INFO: sometime the AI gives response which has \n 's or something similar which when if we try to write to the file 
+        it goes in that format only \n 's  . 
+        this is a bandage way of fixing it:  
+
+        if (content.includes("\\n") && !content.includes("\n")) {
+          content = content.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
+        }
+        
+        INFO: there is a website called : https://www.freeformatter.com/json-escape.html#before-output
+        if basically converts into unscaped json , so probably use their api or implement their implementation 
+         * */
 
         // Ensure parent directory exists
         const dir = filePath.substring(0, filePath.lastIndexOf("/"));
         await this.sandbox.commands.run(`mkdir -p "${dir}"`);
-
         await this.sandbox.files.write(filePath, content);
-
         this.contextManager?.applyWrite(args.file_path as string, content);
 
         onStream({
