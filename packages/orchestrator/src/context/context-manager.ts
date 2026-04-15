@@ -111,6 +111,9 @@ export class ContextManager {
 
   private recentWrites: string[] = [];
 
+  /** Tracks ALL files modified during this session (not capped like recentWrites). */
+  private allModifiedFiles: Set<string> = new Set();
+
   private consoleLogs: string[] = [];
 
   private networkRequests: string[] = [];
@@ -154,12 +157,14 @@ export class ContextManager {
     this.fileTree.add(rel);
     this.files.set(rel, content);
     this.pushRecentWrite(rel);
+    this.allModifiedFiles.add(rel);
   }
 
   applyDelete(path: string): void {
     const rel = this.normalizePath(path);
     this.fileTree.delete(rel);
     this.files.delete(rel);
+    this.allModifiedFiles.add(rel);
   }
 
   applyRename(from: string, to: string): void {
@@ -175,6 +180,7 @@ export class ContextManager {
     this.fileTree.delete(relFrom);
     this.fileTree.add(relTo);
     this.pushRecentWrite(relTo);
+    this.allModifiedFiles.add(relTo);
   }
 
   applyLineReplace(path: string, newFullContent: string): void {
@@ -183,6 +189,7 @@ export class ContextManager {
       this.files.set(rel, newFullContent);
     }
     this.pushRecentWrite(rel);
+    this.allModifiedFiles.add(rel);
   }
 
   storeConsoleLogs(logs: string[]): void {
@@ -195,6 +202,66 @@ export class ContextManager {
 
   generateInitializationContext(): string {
     return initialContext;
+  }
+
+  /**
+   * Returns all files modified during this session.
+   */
+  getModifiedFiles(): string[] {
+    return [...this.allModifiedFiles];
+  }
+
+  /**
+   * Clears the modified files tracker (call between sessions).
+   */
+  clearModifiedFiles(): void {
+    this.allModifiedFiles.clear();
+  }
+
+  /**
+   * Generates a structured <useful-context> block for the TypeScript fix-up loop.
+   * Includes the filtered tsc errors and the full content of small files
+   * (< 100 lines) that have errors, so the AI can fix them without lov-view.
+   */
+  generateTypeCheckContext(
+    filteredErrors: string,
+    errorFiles: string[],
+  ): string {
+    const sections: string[] = [];
+
+    sections.push("## TypeScript Errors\n");
+    sections.push(
+      "The following TypeScript errors were found in files you modified.",
+    );
+    sections.push("Fix ALL errors using `lov-line-replace` or `lov-write`.\n");
+    sections.push("```\n" + filteredErrors + "\n```");
+
+    // Include file contents for small files so the AI doesn't need to lov-view
+    const fileContents: string[] = [];
+    for (const filePath of errorFiles) {
+      const content = this.files.get(filePath);
+      if (!content) continue;
+      const lineCount = content.split("\n").length;
+      if (lineCount <= 100) {
+        const lang = filePath.endsWith(".tsx")
+          ? "tsx"
+          : filePath.endsWith(".ts")
+            ? "typescript"
+            : "";
+        fileContents.push(`### ${filePath}\n\`\`\`${lang}\n${content}\n\`\`\``);
+      } else {
+        fileContents.push(
+          `### ${filePath}\n(${lineCount} lines — use lov-view to inspect)`,
+        );
+      }
+    }
+
+    if (fileContents.length > 0) {
+      sections.push("\n## Files With Errors\n");
+      sections.push(fileContents.join("\n\n"));
+    }
+
+    return `<useful-context>\n${sections.join("\n")}\n</useful-context>`;
   }
 
   generateContext(intent: Intent, userMessage: string): string {

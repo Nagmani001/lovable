@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Rocket, Loader2 } from "lucide-react";
+import { ArrowLeft, Rocket, Loader2, Github, Database } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { deployProject } from "@/lib/api";
@@ -51,6 +51,7 @@ export function WorkspaceHeader({
             <span>
               {agentStatus === "thinking" && "Thinking..."}
               {agentStatus === "writing" && "Writing code..."}
+              {agentStatus === "fixing" && "Fixing errors..."}
             </span>
           </div>
         )}
@@ -71,6 +72,22 @@ export function WorkspaceHeader({
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={() => console.log("GitHub integration coming soon")}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border text-foreground rounded-md hover:bg-muted transition-colors"
+        >
+          <Github className="h-3.5 w-3.5" />
+          GitHub
+        </button>
+
+        <button
+          onClick={() => console.log("Supabase integration coming soon")}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border text-foreground rounded-md hover:bg-muted transition-colors"
+        >
+          <Database className="h-3.5 w-3.5" />
+          Supabase
+        </button>
+
         {deployedUrl && (
           <a
             href={deployedUrl}

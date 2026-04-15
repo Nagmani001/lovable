@@ -29,7 +29,7 @@ export interface TerminalOutput {
 
 export interface AgentStatusEvent {
   type: "status";
-  status: "thinking" | "writing" | "done" | "error";
+  status: "thinking" | "writing" | "fixing" | "done" | "error";
   message?: string;
 }
 

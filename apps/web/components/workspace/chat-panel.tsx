@@ -178,6 +178,7 @@ export function ChatPanel({
             <Loader2 className="h-3 w-3 animate-spin" />
             {agentStatus === "thinking" && "Thinking..."}
             {agentStatus === "writing" && "Writing code..."}
+            {agentStatus === "fixing" && "Fixing errors..."}
           </div>
         )}
 

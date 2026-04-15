@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Rocket, Loader2 } from "lucide-react";
+import {
+  Sun,
+  Moon,
+  Rocket,
+  Loader2,
+  Github,
+  Database,
+  HelpCircle,
+} from "lucide-react";
 import { LovableLogo } from "@repo/ui/components/lovable-logo";
 import {
   DropdownMenu,
@@ -70,6 +78,63 @@ export function Navbar() {
       <div className="flex items-center gap-3">
         {projectId ? (
           <div className="hidden sm:flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="w-9 h-9 rounded-lg border border-border bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Connect GitHub"
+                >
+                  <Github className="size-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-80 p-0 border border-border rounded-xl shadow-lg overflow-hidden"
+              >
+                <div className="p-4 space-y-2">
+                  <h3 className="font-semibold text-foreground">GitHub</h3>
+                  <p className="text-sm text-muted-foreground leading-snug">
+                    Sync your project 2-way with GitHub to collaborate at
+                    source.
+                  </p>
+                </div>
+                <div className="border-t border-border p-3 flex items-center justify-between bg-muted/40">
+                  <HelpCircle className="size-4 text-muted-foreground" />
+                  <button className="px-3 py-1.5 text-[13px] bg-background border border-border text-foreground rounded-md hover:bg-muted font-medium flex items-center gap-1.5 transition-colors">
+                    <Github className="size-3.5" /> Connect GitHub
+                  </button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="w-9 h-9 rounded-lg border border-border bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="Connect Supabase"
+                >
+                  <Database className="size-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-80 p-0 border border-border rounded-xl shadow-lg overflow-hidden"
+              >
+                <div className="p-4 space-y-2">
+                  <h3 className="font-semibold text-foreground">Supabase</h3>
+                  <p className="text-sm text-muted-foreground leading-snug">
+                    Connect your project to a Supabase backend for reliable
+                    database and auth.
+                  </p>
+                </div>
+                <div className="border-t border-border p-3 flex items-center justify-between bg-muted/40">
+                  <HelpCircle className="size-4 text-muted-foreground" />
+                  <button className="px-3 py-1.5 text-[13px] bg-background border border-border text-foreground rounded-md hover:bg-muted font-medium flex items-center gap-1.5 transition-colors">
+                    <Database className="size-3.5" /> Connect Supabase
+                  </button>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {deployedUrl ? (
               <a
                 href={deployedUrl}
