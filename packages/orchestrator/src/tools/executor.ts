@@ -84,21 +84,6 @@ export class ToolExecutor {
         const filePath = this.resolvePath(args.file_path as string);
         let content = args.content as string;
 
-        /*
-       BUG: this issue  is actually flakey
-
-        INFO: sometime the AI gives response which has \n 's or something similar which when if we try to write to the file 
-        it goes in that format only \n 's  . 
-        this is a bandage way of fixing it:  
-
-        if (content.includes("\\n") && !content.includes("\n")) {
-          content = content.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
-        }
-        
-        INFO: there is a website called : https://www.freeformatter.com/json-escape.html#before-output
-        if basically converts into unscaped json , so probably use their api or implement their implementation 
-         * */
-
         // Ensure parent directory exists
         const dir = filePath.substring(0, filePath.lastIndexOf("/"));
         await this.sandbox.commands.run(`mkdir -p "${dir}"`);
@@ -192,13 +177,11 @@ export class ToolExecutor {
       }
 
       case "lov-line-replace": {
-        console.log("args", args);
         const filePath = this.resolvePath(args.file_path as string);
         const hintFirst = args.first_replaced_line as number;
         const hintLast = args.last_replaced_line as number;
         const search = args.search as string;
         const replace = args.replace as string;
-
         const content = await this.sandbox.files.read(filePath);
         const lines = content.split("\n");
 
@@ -210,8 +193,8 @@ export class ToolExecutor {
           hintLast,
         );
 
-        // Replace the matched line range
         const replaceLines = replace.split("\n");
+
         lines.splice(
           actualFirst - 1,
           actualLast - actualFirst + 1,
@@ -236,27 +219,20 @@ export class ToolExecutor {
       }
 
       case "lov-search-files": {
-        console.log("args", args);
         const query = args.query as string;
-        console.log("query", query);
         const includePattern = args.include_pattern as string;
-        console.log("includePattern", includePattern);
         const excludePattern = args.exclude_pattern as string | undefined;
-        console.log("excludePattern", excludePattern);
         const caseSensitive = args.case_sensitive as boolean | undefined;
-        console.log("caseSensitive", caseSensitive);
 
         let cmd = `cd ${this.projectBasePath} && grep -rn`;
         if (!caseSensitive) cmd += "i";
         cmd += ` "${query}" --include="${includePattern}"`;
         if (excludePattern) cmd += ` --exclude="${excludePattern}"`;
         cmd += " . 2>/dev/null || true";
-        console.log("cmd", cmd);
 
         const result = await this.sandbox.commands.run(cmd, {
           timeoutMs: 15_000,
         });
-        console.log("result", result);
 
         return result.stdout || "No results found";
       }
