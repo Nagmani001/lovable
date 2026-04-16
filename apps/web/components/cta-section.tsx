@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -29,6 +29,24 @@ const tooltips: Record<string, { title: string; description: string }> = {
 export function CTASection() {
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = (buttonId: string) => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setHoveredButton(buttonId);
+  };
+
+  const handleMouseLeave = () => {
+    timeoutRef.current = setTimeout(() => {
+      setHoveredButton(null);
+    }, 150);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const hasText = inputValue.trim().length > 0;
 
@@ -59,8 +77,8 @@ export function CTASection() {
               <div className="relative">
                 <button
                   className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                  onMouseEnter={() => setHoveredButton("plus")}
-                  onMouseLeave={() => setHoveredButton(null)}
+                  onMouseEnter={() => handleMouseEnter("plus")}
+                  onMouseLeave={handleMouseLeave}
                 >
                   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
                     <path
@@ -78,8 +96,8 @@ export function CTASection() {
                 <div className="relative">
                   <button
                     className="px-3 h-8 rounded-full bg-secondary text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-                    onMouseEnter={() => setHoveredButton("plan")}
-                    onMouseLeave={() => setHoveredButton(null)}
+                    onMouseEnter={() => handleMouseEnter("plan")}
+                    onMouseLeave={handleMouseLeave}
                   >
                     Plan
                   </button>
@@ -88,8 +106,8 @@ export function CTASection() {
                 <div className="relative">
                   <button
                     className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    onMouseEnter={() => setHoveredButton("voice")}
-                    onMouseLeave={() => setHoveredButton(null)}
+                    onMouseEnter={() => handleMouseEnter("voice")}
+                    onMouseLeave={handleMouseLeave}
                   >
                     <svg
                       width="14"
@@ -116,8 +134,8 @@ export function CTASection() {
                         ? "bg-foreground text-background hover:bg-foreground/80 cursor-pointer"
                         : "bg-muted text-muted-foreground cursor-not-allowed opacity-40"
                     }`}
-                    onMouseEnter={() => setHoveredButton("send")}
-                    onMouseLeave={() => setHoveredButton(null)}
+                    onMouseEnter={() => handleMouseEnter("send")}
+                    onMouseLeave={handleMouseLeave}
                   >
                     <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                       <path
@@ -142,11 +160,15 @@ export function CTASection() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
-                className="absolute mt-3 max-w-xs"
+                className="absolute mt-3 max-w-xs z-50"
                 style={{
                   left: hoveredButton === "plus" ? "0" : "auto",
                   right: hoveredButton !== "plus" ? "0" : "auto",
                 }}
+                onMouseEnter={() => {
+                  if (timeoutRef.current) clearTimeout(timeoutRef.current);
+                }}
+                onMouseLeave={handleMouseLeave}
               >
                 <div className="rounded-2xl bg-card border border-border p-5 text-left">
                   <h4 className="text-sm font-semibold text-foreground mb-1">

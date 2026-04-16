@@ -196,7 +196,7 @@ export async function runAgentLoop(
       `/home/nagmani/root/temp/messages${iteration}.json`,
       JSON.stringify(messages, null, 2),
     );
-     */
+    */
 
     let response;
 
@@ -205,10 +205,15 @@ export async function runAgentLoop(
       while (true) {
         try {
           response = await client.chat.completions.create({
-            //          model: "gpt-4o-mini",
-            //          model: "gemini-2.5-flash-lite",
-            //             model: "gemini-2.5-flash",
+            //INFO: BAD model
+            // model: "gemini-2.5-flash-lite",
+
+            //INFO: MEDIUM model , generally down : returns 503
+            //            model: "gemini-2.5-flash",
+
+            //INFO: BEST model
             model: "gemini-3-flash-preview",
+
             max_completion_tokens: 8096,
             messages,
             tools: toolDefinitions as OpenAI.ChatCompletionTool[],
