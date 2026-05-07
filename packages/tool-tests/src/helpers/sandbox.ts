@@ -56,12 +56,10 @@ async function waitForPreview(
     } catch (err) {
       lastError = err;
     }
-    // Wait 1s before retrying
     await new Promise((r) => setTimeout(r, 1_000));
   }
 
-  // Not treating a timeout as fatal — the app might still start soon
   console.warn(
-    `   ⚠️  Timed out waiting for port ${port} (last error: ${lastError}). Continuing anyway.`,
+    `    Timed out waiting for port ${port} (last error: ${lastError}). Continuing anyway.`,
   );
 }

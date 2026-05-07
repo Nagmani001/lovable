@@ -81,8 +81,6 @@ describe("lov-write", () => {
 
   it("unescapes double-escaped newlines from flaky LLM output", async () => {
     const filePath = `${TEST_DIR}/double-escaped.tsx`;
-    // Simulate what happens when the LLM double-escapes: after JSON.parse,
-    // the string contains literal two-char sequences "\\n" instead of real newlines.
     const doubleEscaped =
       'import React from "react";\\nimport { Button } from "./Button";\\n\\nconst App = () => {\\n  return <Button />;\\n};\\n\\nexport default App;\\n';
 
@@ -93,17 +91,9 @@ describe("lov-write", () => {
     );
 
     const actual = await sandbox.files.read(`${BASE}/${filePath}`);
-
-    // Should NOT contain literal backslash-n sequences
     expect(actual).not.toContain("\\n");
-
-    // Should contain real newlines
     expect(actual).toContain("\n");
-
-    // Should have the correct number of lines
     expect(actual.split("\n").length).toBe(9);
-
-    // First line should be a clean import
     expect(actual.split("\n")[0]).toBe('import React from "react";');
   });
 });

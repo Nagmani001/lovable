@@ -18,7 +18,6 @@ beforeAll(async () => {
   executor = new ToolExecutor(sandbox, BASE);
   await sandbox.commands.run(`mkdir -p "${BASE}/${TEST_DIR}"`);
 
-  // Seed two files with known content for searching
   await executor.execute(
     "lov-write",
     {
