@@ -92,7 +92,6 @@
 
     deploy:
       needs: [build-backend, build-web]
-      # Run even if one build was skipped (nothing changed in that app)
       if: always() && !failure() && !cancelled()
       runs-on: ubuntu-latest
       steps:
@@ -117,22 +116,16 @@
             script: |
               cd /home/${{ secrets.SSH_USERNAME }}/lovable
 
-              # Pull latest images
               docker compose -f docker-compose-deploy.yml pull
-
-              # Run database migrations
               docker compose -f docker-compose-deploy.yml run --rm backend sh -c "cd packages/database && npx prisma migrate deploy"
-
-              # Restart services , assuming deps are already running
               docker compose -f docker-compose-deploy.yml up -d --no-deps backend
               docker compose -f docker-compose-deploy.yml up -d --no-deps web
 
-              # check health of backend  
+              # wait for them in better way
+
               sleep 10 
               curl -f --retry 3 --retry-delay 2 http://localhost:5001/health || exit 1
 
-              # check health of web
               curl -f --retry 3 --retry-delay 2 http://localhost:5000/api/health || exit 1
               
-              # Clean up old images
               docker image prune -f

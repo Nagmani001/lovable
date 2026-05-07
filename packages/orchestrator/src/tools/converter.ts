@@ -14,9 +14,6 @@ interface RawToolDef {
   };
 }
 
-/**
- * Loads agent_tools.json and converts it to the OpenAI function-calling format.
- */
 export function loadToolDefinitions(): ToolDefinition[] {
   const toolsPath = resolve(__dirname, "../prompt/agent_tools.json");
 
@@ -43,9 +40,6 @@ export function loadToolDefinitions(): ToolDefinition[] {
   }
 }
 
-/**
- * Loads the system prompt from agent_prompt.txt
- */
 export function loadSystemPrompt(): string {
   const promptPath = resolve(__dirname, "../prompt/agent_prompt.txt");
   return readFileSync(promptPath, "utf-8");

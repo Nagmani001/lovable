@@ -25,16 +25,11 @@ export class ProjectStorage {
     this.bucket = config.bucket;
   }
 
-  /*
-   * Persist project files from sandbox to S3 as a tar.gz archive.
-   * Excludes node_modules, .git, and dist to keep the archive small.
-   */
   async persistProject(
     sandbox: Sandbox,
     projectId: string,
     projectBasePath: string = "/home/user/project",
   ): Promise<void> {
-    // Create tar.gz inside the sandbox
     await sandbox.commands.run(
       `cd /home/user && tar -czf /tmp/project.tar.gz ` +
         `--exclude=node_modules --exclude=.git --exclude=dist ` +
@@ -42,10 +37,8 @@ export class ProjectStorage {
       { timeoutMs: 30_000 },
     );
 
-    // Read the tar.gz from sandbox
     const tarContent = await sandbox.files.read("/tmp/project.tar.gz");
 
-    // Upload to S3
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -55,7 +48,6 @@ export class ProjectStorage {
       }),
     );
 
-    // Save metadata
     await this.s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
@@ -69,10 +61,6 @@ export class ProjectStorage {
     );
   }
 
-  /**
-   * Restore project files from S3 into a sandbox.
-   * Returns true if files were restored, false if no backup exists.
-   */
   async restoreProject(
     sandbox: Sandbox,
     projectId: string,
@@ -91,10 +79,8 @@ export class ProjectStorage {
       const bodyBytes = await response.Body.transformToByteArray();
       const bodyString = Buffer.from(bodyBytes).toString("binary");
 
-      // Write tar.gz to sandbox
       await sandbox.files.write("/tmp/project.tar.gz", bodyString);
 
-      // Extract into project directory
       await sandbox.commands.run(
         `mkdir -p "${projectBasePath}" && ` +
           `cd "${projectBasePath}" && ` +
@@ -102,7 +88,6 @@ export class ProjectStorage {
         { timeoutMs: 30_000 },
       );
 
-      // Clean up tar file
       await sandbox.commands.run("rm -f /tmp/project.tar.gz");
 
       console.log(`Restored project ${projectId} from S3`);
@@ -110,16 +95,12 @@ export class ProjectStorage {
     } catch (err: unknown) {
       const error = err as { name?: string };
       if (error.name === "NoSuchKey") {
-        // New project, no backup exists
         return false;
       }
       throw err;
     }
   }
 
-  /**
-   * Delete all S3 data for a project.
-   */
   async deleteProject(projectId: string): Promise<void> {
     const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
 
@@ -132,9 +113,7 @@ export class ProjectStorage {
       keys.map((Key) =>
         this.s3
           .send(new DeleteObjectCommand({ Bucket: this.bucket, Key }))
-          .catch(() => {
-            /* ignore missing keys */
-          }),
+          .catch(() => {}),
       ),
     );
   }

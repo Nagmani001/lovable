@@ -53,12 +53,6 @@ export class ProjectDeployer {
       }),
     );
 
-    // In production, you'd:
-    // 1. Extract the tar
-    // 2. Upload each file to an S3 bucket with static website hosting
-    // 3. Or use Vercel/Netlify API
-    // 4. Return the actual deployed URL
-
     return `https://${projectId}.your-domain.com`;
   }
 }

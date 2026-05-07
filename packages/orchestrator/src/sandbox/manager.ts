@@ -20,11 +20,9 @@ export class SandboxManager {
     const existing = this.activeSandboxes.get(projectId);
     if (existing) {
       try {
-        // Check if sandbox is still alive by running a simple command
         await existing.sandbox.commands.run("echo alive", { timeoutMs: 5000 });
         return existing;
       } catch {
-        // Sandbox is dead, remove it and create new
         this.activeSandboxes.delete(projectId);
       }
     }
@@ -34,21 +32,16 @@ export class SandboxManager {
       timeoutMs: this.config.sandboxTimeoutMs,
     });
 
-    // Restore project files from S3 (if they exist)
     const restored = await this.storage.restoreProject(sandbox, projectId);
 
     if (!restored) {
-      // New project - the template already has a base React+Vite setup
-      // No extra setup needed since the E2B template includes everything
       console.log(`New project ${projectId}, using template defaults`);
     }
 
-    // Run the template's start script (installs deps, starts Vite + OpenVSCode Server)
     await sandbox.commands.run("bash /home/user/start.sh", {
       background: true,
     });
 
-    // Wait for services to come up
     await new Promise((resolve) => setTimeout(resolve, 5000));
 
     const previewHost = sandbox.getHost(VITE_PORT);
@@ -77,7 +70,6 @@ export class SandboxManager {
       await entry.sandbox.setTimeout(this.config.sandboxTimeoutMs);
       return true;
     } catch {
-      // Sandbox may have already died
       this.activeSandboxes.delete(projectId);
       return false;
     }
@@ -94,12 +86,9 @@ export class SandboxManager {
       console.error(`Failed to persist project ${projectId}:`, err);
     }
 
-    // Set a short timeout - sandbox will die soon
     try {
       await entry.sandbox.setTimeout(5 * 60 * 1000); // 5 minutes
-    } catch {
-      // Already dead
-    }
+    } catch {}
   }
 
   async shutdownSandbox(projectId: string): Promise<void> {
@@ -107,7 +96,6 @@ export class SandboxManager {
     if (!entry) return;
 
     try {
-      // Persist files to S3 before killing
       await this.storage.persistProject(entry.sandbox, projectId);
       console.log(`Persisted project ${projectId} before shutdown`);
     } catch (err) {
@@ -116,9 +104,7 @@ export class SandboxManager {
 
     try {
       await entry.sandbox.kill();
-    } catch {
-      // Already dead
-    }
+    } catch {}
 
     this.activeSandboxes.delete(projectId);
     console.log(`Sandbox for project ${projectId} shut down`);
@@ -143,7 +129,7 @@ export class SandboxManager {
           await this.shutdownSandbox(projectId);
         }
       }
-    }, 60_000); // Check every minute
+    }, 60_000);
   }
 
   stopHealthCheckLoop(): void {

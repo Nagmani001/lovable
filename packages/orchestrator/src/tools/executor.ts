@@ -65,7 +65,6 @@ export class ToolExecutor {
   }
 
   private resolvePath(filePath: string): string {
-    // If path is absolute, use it; otherwise resolve relative to project
     if (filePath.startsWith("/")) return filePath;
     return `${this.projectBasePath}/${filePath}`;
   }
@@ -76,15 +75,10 @@ export class ToolExecutor {
     onStream: (chunk: StreamChunk) => void,
   ): Promise<string> {
     switch (toolName) {
-      // ═══════════════════════════════════════
-      // FILE OPERATIONS
-      // ═══════════════════════════════════════
-
       case "lov-write": {
         const filePath = this.resolvePath(args.file_path as string);
         let content = args.content as string;
 
-        // Ensure parent directory exists
         const dir = filePath.substring(0, filePath.lastIndexOf("/"));
         await this.sandbox.commands.run(`mkdir -p "${dir}"`);
         await this.sandbox.files.write(filePath, content);
@@ -107,7 +101,6 @@ export class ToolExecutor {
           return this.sliceLines(content, args.lines as string);
         }
 
-        // Default: return first 500 lines
         const lines = content.split("\n");
         if (lines.length > 500) {
           return (
@@ -143,7 +136,6 @@ export class ToolExecutor {
         );
         const newPath = this.resolvePath(args.new_file_path as string);
 
-        // Ensure parent directory of destination exists
         const dir = newPath.substring(0, newPath.lastIndexOf("/"));
         await this.sandbox.commands.run(`mkdir -p "${dir}"`);
 
@@ -185,7 +177,6 @@ export class ToolExecutor {
         const content = await this.sandbox.files.read(filePath);
         const lines = content.split("\n");
 
-        // Validate search against file content and find the actual line range
         const { actualFirst, actualLast } = this.findMatchingRange(
           lines,
           search,
@@ -237,10 +228,6 @@ export class ToolExecutor {
         return result.stdout || "No results found";
       }
 
-      // ═══════════════════════════════════════
-      // DEPENDENCY MANAGEMENT
-      // ═══════════════════════════════════════
-
       case "lov-add-dependency": {
         const pkg = args.package as string;
         const result = await this.sandbox.commands.run(
@@ -270,10 +257,6 @@ export class ToolExecutor {
         return result.stdout || "Package removed";
       }
 
-      // ═══════════════════════════════════════
-      // DOWNLOAD
-      // ═══════════════════════════════════════
-
       case "lov-download-to-repo": {
         const sourceUrl = args.source_url as string;
         const targetPath = this.resolvePath(args.target_path as string);
@@ -288,10 +271,6 @@ export class ToolExecutor {
 
         return `Downloaded ${sourceUrl} → ${args.target_path}`;
       }
-
-      // ═══════════════════════════════════════
-      // CONSOLE & NETWORK LOGS
-      // ═══════════════════════════════════════
 
       case "lov-read-console-logs": {
         const search = args.search as string;
@@ -325,10 +304,6 @@ export class ToolExecutor {
         return this.networkRequests.join("\n");
       }
 
-      // ═══════════════════════════════════════
-      // WEB FETCH (simplified - no browser)
-      // ═══════════════════════════════════════
-
       case "lov-fetch-website": {
         const url = args.url as string;
         const result = await this.sandbox.commands.run(
@@ -354,10 +329,6 @@ export class ToolExecutor {
     }
   }
 
-  /**
-   * Validates the search parameter against actual file content and finds
-   * the correct line range, correcting for line number mismatches from the AI.
-   */
   private findMatchingRange(
     lines: string[],
     search: string,
@@ -370,7 +341,6 @@ export class ToolExecutor {
     const SEARCH_WINDOW = 20;
 
     if (ellipsisIndex < 0) {
-      // No ellipsis — find where the full search content starts
       const start = this.findBlockStart(
         lines,
         searchLines,
@@ -387,7 +357,6 @@ export class ToolExecutor {
       return { actualFirst: hintFirst, actualLast: hintLast };
     }
 
-    // Has ellipsis — find prefix start and suffix end independently
     const prefixLines = searchLines.slice(0, ellipsisIndex);
     const suffixLines = searchLines.slice(ellipsisIndex + 1);
 
@@ -421,10 +390,6 @@ export class ToolExecutor {
     return { actualFirst, actualLast };
   }
 
-  /**
-   * Find where a block of lines starts in the file, searching near `hint` (1-indexed).
-   * Returns 1-indexed line number or -1 if not found.
-   */
   private findBlockStart(
     fileLines: string[],
     blockLines: string[],
@@ -458,10 +423,6 @@ export class ToolExecutor {
     return -1;
   }
 
-  /**
-   * Find where a block of lines ends in the file, searching near `hint` (1-indexed).
-   * Returns 1-indexed line number of the last line, or -1 if not found.
-   */
   private findBlockEnd(
     fileLines: string[],
     blockLines: string[],
@@ -498,7 +459,6 @@ export class ToolExecutor {
     const allLines = content.split("\n");
     const result: string[] = [];
 
-    // Parse line ranges like "1-800, 1001-1500"
     const ranges = linesParam.split(",").map((r) => r.trim());
 
     for (const range of ranges) {

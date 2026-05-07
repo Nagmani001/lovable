@@ -3,9 +3,6 @@ import type { ChatCompletionMessageParam } from "openai/resources/chat/completio
 import type { StreamChunk } from "@repo/common/types";
 import { ToolExecutor } from "../tools/executor.js";
 
-/**
- * Calls the LLM with exponential backoff on 429 rate-limit errors.
- */
 export async function callLLMWithRetry(
   client: OpenAI,
   messages: ChatCompletionMessageParam[],
@@ -39,16 +36,9 @@ export async function callLLMWithRetry(
 }
 
 export interface MiniLoopResult {
-  /** Whether the LLM finished (no more tool calls) */
   finished: boolean;
 }
 
-/**
- * Runs a single LLM turn: calls the model, streams output, executes any
- * tool calls, and pushes all messages onto the conversation history.
- *
- * Returns whether the LLM finished (no more tool calls).
- */
 export async function runSingleLLMTurn(opts: {
   client: OpenAI;
   messages: ChatCompletionMessageParam[];
@@ -83,12 +73,10 @@ export async function runSingleLLMTurn(opts: {
   const assistantMessage = choice.message;
   messages.push(assistantMessage);
 
-  // Stream text content if present
   if (assistantMessage.content) {
     onStream({ type: "text", content: assistantMessage.content });
   }
 
-  // Process tool calls if present
   const toolCalls = assistantMessage.tool_calls;
 
   if (toolCalls && toolCalls.length > 0) {
@@ -113,7 +101,6 @@ export async function runSingleLLMTurn(opts: {
     }
   }
 
-  // Determine if we should stop
   const noToolCalls = !toolCalls || toolCalls.length === 0;
   const finished =
     noToolCalls || (choice.finish_reason === "stop" && noToolCalls);
@@ -121,10 +108,6 @@ export async function runSingleLLMTurn(opts: {
   return { finished };
 }
 
-/**
- * Runs a mini agent loop: repeatedly calls the LLM and executes tool calls
- * until the model stops producing tool calls or we hit the step cap.
- */
 export async function runMiniAgentLoop(opts: {
   client: OpenAI;
   messages: ChatCompletionMessageParam[];

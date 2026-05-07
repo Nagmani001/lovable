@@ -1,7 +1,3 @@
-// ═══════════════════════════════════════
-// Stream chunks: Backend → Frontend (SSE)
-// ═══════════════════════════════════════
-
 export interface TextStreamChunk {
   type: "text";
   content: string;
@@ -54,10 +50,6 @@ export type StreamChunk =
   | SandboxReadyEvent
   | ErrorEvent;
 
-// ═══════════════════════════════════════
-// Sandbox info returned to frontend
-// ═══════════════════════════════════════
-
 export interface SandboxInfo {
   sandboxId: string;
   projectId: string;
@@ -65,10 +57,6 @@ export interface SandboxInfo {
   vscodeUrl: string;
   createdAt: string;
 }
-
-// ═══════════════════════════════════════
-// Project API responses
-// ═══════════════════════════════════════
 
 export interface CreateProjectResponse {
   projectId: string;
@@ -86,10 +74,6 @@ export interface ProjectDetails {
   createdAt: string;
   updatedAt: string;
 }
-
-// ═══════════════════════════════════════
-// Conversation history
-// ═══════════════════════════════════════
 
 export interface ConversationMessage {
   role: "user" | "assistant";

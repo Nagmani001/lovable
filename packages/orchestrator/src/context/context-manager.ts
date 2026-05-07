@@ -111,7 +111,6 @@ export class ContextManager {
 
   private recentWrites: string[] = [];
 
-  /** Tracks ALL files modified during this session (not capped like recentWrites). */
   private allModifiedFiles: Set<string> = new Set();
 
   private consoleLogs: string[] = [];

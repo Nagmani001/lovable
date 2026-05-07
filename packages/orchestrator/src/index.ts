@@ -37,26 +37,16 @@ export class Orchestrator {
     });
   }
 
-  /**
-   * Initialize the orchestrator - start health check loop.
-   */
   start(): void {
     this.sandboxManager.startHealthCheckLoop();
     console.log("Orchestrator started");
   }
 
-  /**
-   * Shutdown all sandboxes and stop the health check loop.
-   */
   async shutdown(): Promise<void> {
     await this.sandboxManager.shutdownAll();
     console.log("Orchestrator shut down");
   }
 
-  /**
-   * Create or resume a sandbox for a project.
-   * Returns sandbox info including preview and VS Code URLs.
-   */
   async createSandbox(projectId: string): Promise<{
     previewUrl: string;
     vscodeUrl: string;
@@ -70,10 +60,6 @@ export class Orchestrator {
     };
   }
 
-  /**
-   * Handle a user message - runs the AI agent loop.
-   * Streams results back via the onStream callback.
-   */
   async handleUserMessage(params: {
     projectId: string;
     message: string;
@@ -92,22 +78,12 @@ export class Orchestrator {
       return params.conversationHistory;
     }
 
-    // Get or create ContextManager for this project
     let contextManager = this.contextManagers.get(params.projectId);
     if (!contextManager) {
       contextManager = ContextManager.createFromBaseline();
       this.contextManagers.set(params.projectId, contextManager);
     }
 
-    // Generate useful-context and inject ephemerally into the last user message.
-    // We find the last user message by role (not by position) because after turn 1
-    // the history ends with tool messages, so idx === arr.length - 1 never matches.
-    // The injected copy is only used for the LLM call — it is never stored back in
-    // the conversation history, so context is always fresh and clean on every turn.
-    //
-    // First message → always use the fixed initialization context (full project
-    // overview). Subsequent messages → classify intent and emit a targeted context.
-    //
     // NOTE: The router saves the current user message to DB *before* calling
     // handleUserMessage, so conversationHistory always has ≥1 entry. We detect
     // the first turn by the absence of any assistant message in history.
@@ -145,31 +121,20 @@ export class Orchestrator {
       contextManager,
     });
 
-    // Reconstruct history: original clean messages (no injected context) +
-    // only the NEW messages produced this turn (assistant replies + tool results).
     const newMessages = updatedMessages.slice(
       params.conversationHistory.length,
     );
     return [...params.conversationHistory, ...newMessages];
   }
 
-  /**
-   * Extend sandbox lifetime via heartbeat.
-   */
   async heartbeat(projectId: string): Promise<boolean> {
     return this.sandboxManager.heartbeat(projectId);
   }
 
-  /**
-   * Persist project and schedule sandbox for shutdown.
-   */
   async persistProject(projectId: string): Promise<void> {
     await this.sandboxManager.persistAndScheduleShutdown(projectId);
   }
 
-  /**
-   * Build and deploy a project.
-   */
   async deployProject(projectId: string): Promise<string> {
     const entry = this.sandboxManager.getSandbox(projectId);
     if (!entry) {
@@ -183,15 +148,11 @@ export class Orchestrator {
     );
   }
 
-  /**
-   * Get the sandbox manager for direct access.
-   */
   getSandboxManager(): SandboxManager {
     return this.sandboxManager;
   }
 }
 
-// Re-export types and classes
 export type {
   OrchestratorConfig,
   ChatCompletionMessageParam,

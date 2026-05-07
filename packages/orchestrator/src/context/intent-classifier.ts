@@ -1,11 +1,3 @@
-/**
- * Intent classifier for user messages.
- *
- * Uses a weighted keyword scoring approach — each intent has a set of
- * keyword patterns with scores. The intent with the highest total score wins.
- * Falls back to "question" when nothing matches strongly.
- */
-
 export type Intent =
   | "ui_styling" //        "make the button blue", "fix the spacing"
   | "animation" //         "add a fade in", "loading skeleton"
@@ -26,8 +18,6 @@ interface IntentRule {
 }
 
 const RULES: IntentRule[] = [
-  // ─── content_copy ────────────────────────────────────────────────────────
-  // Checked first because it's the most specific and smallest possible context.
   {
     intent: "content_copy",
     patterns: [
@@ -52,7 +42,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── ui_styling ──────────────────────────────────────────────────────────
   {
     intent: "ui_styling",
     patterns: [
@@ -86,7 +75,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── animation ───────────────────────────────────────────────────────────
   {
     intent: "animation",
     patterns: [
@@ -110,7 +98,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── responsive_layout ───────────────────────────────────────────────────
   {
     intent: "responsive_layout",
     patterns: [
@@ -136,7 +123,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── bug_fix ─────────────────────────────────────────────────────────────
   {
     intent: "bug_fix",
     patterns: [
@@ -169,7 +155,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── data_api ────────────────────────────────────────────────────────────
   {
     intent: "data_api",
     patterns: [
@@ -201,7 +186,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── navigation_routing ──────────────────────────────────────────────────
   {
     intent: "navigation_routing",
     patterns: [
@@ -228,7 +212,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── new_feature ─────────────────────────────────────────────────────────
   {
     intent: "new_feature",
     patterns: [
@@ -248,7 +231,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── logic_state ─────────────────────────────────────────────────────────
   {
     intent: "logic_state",
     patterns: [
@@ -280,7 +262,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── refactor ────────────────────────────────────────────────────────────
   {
     intent: "refactor",
     patterns: [
@@ -311,7 +292,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── typescript_types ────────────────────────────────────────────────────
   {
     intent: "typescript_types",
     patterns: [
@@ -339,8 +319,6 @@ const RULES: IntentRule[] = [
     ],
   },
 
-  // ─── question ────────────────────────────────────────────────────────────
-  // Lowest priority — only wins when nothing else has a strong signal.
   {
     intent: "question",
     patterns: [
@@ -358,10 +336,6 @@ const RULES: IntentRule[] = [
   },
 ];
 
-/**
- * Classify a user message into one of the 12 intent types.
- * Returns the intent with the highest cumulative keyword score.
- */
 export function classifyIntent(message: string): Intent {
   const scores = new Map<Intent, number>();
 
