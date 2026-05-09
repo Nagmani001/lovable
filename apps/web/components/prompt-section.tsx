@@ -47,7 +47,7 @@ export function PromptSection() {
           value={prompt}
           onChange={setPrompt}
           onSubmit={handleSubmit}
-          placeholder="Ask PromptForge to create an interface..."
+          placeholder="Ask Lovable to create an interface..."
         />
 
         {isCreating && (

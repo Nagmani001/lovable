@@ -14,7 +14,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "PromptForge",
+  title: "Lovable",
   description: "Build websites with a single prompt",
 };
 
