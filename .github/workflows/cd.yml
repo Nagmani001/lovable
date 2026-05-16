@@ -26,6 +26,7 @@
                 - 'packages/common/**'
                 - 'packages/email/**'
                 - 'packages/orchestrator/**'
+                - 'packages/orchestrator-lg/**'
                 - 'docker/backend/**'
               web:
                 - 'apps/web/**'
