@@ -6,7 +6,15 @@
   "main": "./src/index.ts",
   "exports": {
     "./orchestrator": "./src/index.ts",
-    "./tools": "./src/tools/executor.ts"
+    "./tools": "./src/tools/executor.ts",
+    "./context": "./src/context/context-manager.ts",
+    "./intent": "./src/context/intent-classifier.ts",
+    "./check": "./src/agent/checkCodeUtils.ts",
+    "./parser": "./src/agent/parserUtils.ts",
+    "./sandbox": "./src/sandbox/manager.ts",
+    "./storage": "./src/storage/s3.ts",
+    "./deploy": "./src/deploy/deployer.ts",
+    "./types": "./src/types/index.ts"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*"

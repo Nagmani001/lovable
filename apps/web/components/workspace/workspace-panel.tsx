@@ -21,11 +21,18 @@ export function WorkspacePanel({
 }: WorkspacePanelProps) {
   const [activeTab, setActiveTab] = useState<"preview" | "code">("preview");
   const [previewKey, setPreviewKey] = useState(0);
+  const [codeKey, setCodeKey] = useState(0);
   const previewReady = Boolean(previewUrl) && !showProcessingScreen;
+  const codeReady = Boolean(vscodeUrl);
 
   const refreshPreview = () => {
     if (!previewReady) return;
     setPreviewKey((k) => k + 1);
+  };
+
+  const refreshCode = () => {
+    if (!codeReady) return;
+    setCodeKey((k) => k + 1);
   };
 
   return (
@@ -63,6 +70,15 @@ export function WorkspacePanel({
               onClick={refreshPreview}
               className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               title="Refresh preview"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {activeTab === "code" && codeReady && (
+            <button
+              onClick={refreshCode}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title="Refresh code editor"
             >
               <RefreshCw className="h-3.5 w-3.5" />
             </button>
@@ -124,6 +140,7 @@ export function WorkspacePanel({
 
         {vscodeUrl ? (
           <iframe
+            key={codeKey}
             src={vscodeUrl}
             className={`absolute inset-0 w-full h-full border-0 ${
               activeTab === "code" ? "block" : "hidden"

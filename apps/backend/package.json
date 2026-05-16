@@ -19,6 +19,7 @@
     "@repo/common": "workspace:*",
     "@repo/email": "workspace:*",
     "@repo/orchestrator": "workspace:^",
+    "@repo/orchestrator-lg": "workspace:^",
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^8.2.3",
     "@types/express": "^5.0.6",

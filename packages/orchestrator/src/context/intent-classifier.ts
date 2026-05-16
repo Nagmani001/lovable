@@ -364,5 +364,6 @@ export function classifyIntent(message: string): Intent {
     }
   }
 
+  console.log("intent", best);
   return best;
 }

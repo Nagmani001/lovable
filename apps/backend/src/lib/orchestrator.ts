@@ -3,9 +3,11 @@ import {
   type OrchestratorConfig,
 } from "@repo/orchestrator/orchestrator";
 
-let orchestrator: Orchestrator | null = null;
+import { OrchestratorLG } from "@repo/orchestrator-lg/orchestrator";
 
-export function initOrchestrator(): Orchestrator {
+let orchestrator: OrchestratorLG | null = null;
+
+export function initOrchestrator(): OrchestratorLG {
   if (orchestrator) return orchestrator;
 
   const config: OrchestratorConfig = {
@@ -21,13 +23,13 @@ export function initOrchestrator(): Orchestrator {
     projectBasePath: "/home/user/project",
   };
 
-  orchestrator = new Orchestrator(config);
+  orchestrator = new OrchestratorLG(config);
   orchestrator.start();
 
   return orchestrator;
 }
 
-export function getOrchestrator(): Orchestrator {
+export function getOrchestrator(): OrchestratorLG {
   if (!orchestrator) {
     throw new Error(
       "Orchestrator not initialized. Call initOrchestrator() first.",
