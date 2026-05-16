@@ -109,7 +109,10 @@ export class OrchestratorLG {
 
     try {
       const updatedMessages = await runAgentLoopLG({
-        apiKey: this.config.openRouterApiKey,
+        apiKeys: this.config.openRouterApiKey
+          .split(/[,\n]/)
+          .map((k) => k.trim())
+          .filter(Boolean),
         messages: llmMessages,
         sandbox: entry.sandbox,
         projectBasePath: this.config.projectBasePath,

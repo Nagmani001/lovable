@@ -1,4 +1,3 @@
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { SystemMessage } from "@langchain/core/messages";
 import type { StreamChunk } from "@repo/common/types";
 import type { ContextManager } from "@repo/orchestrator/context";
@@ -6,11 +5,12 @@ import { ToolExecutor } from "@repo/orchestrator/tools";
 import type { ChatCompletionMessageParam } from "@repo/orchestrator/types";
 import type { Sandbox } from "e2b";
 import { buildLangChainTools, loadSystemPrompt } from "../tools/buildTools.js";
+import { buildFailoverModel } from "./failoverModel.js";
 import { buildAgentGraph, GRAPH_RECURSION_LIMIT } from "./graph.js";
 import { fromLangChainMessages, toLangChainMessages } from "./messageBridge.js";
 
 export interface RunLoopParams {
-  apiKey: string;
+  apiKeys: string[];
   messages: ChatCompletionMessageParam[];
   sandbox: Sandbox;
   projectBasePath: string;
@@ -25,12 +25,12 @@ export async function runAgentLoopLG(
 ): Promise<ChatCompletionMessageParam[] | undefined> {
   await new Promise((r) => setTimeout(r, 1000));
 
-  const model = new ChatGoogleGenerativeAI({
-    apiKey: params.apiKey,
-    model: "gemini-3-flash-preview",
+  const model = buildFailoverModel({
+    apiKeys: params.apiKeys,
+    //    model: "gemini-3-flash-preview",
+    model: "gemini-3.1-flash-lite",
     maxOutputTokens: 8096,
-    maxRetries: 5,
-    streaming: false,
+    maxRetries: 0,
   });
 
   const executor = new ToolExecutor(
@@ -68,6 +68,6 @@ export async function runAgentLoopLG(
     const all = fromLangChainMessages(finalState.messages);
     return all.filter((m) => m.role !== "system");
   } catch (err) {
-    console.log("error occured in run agent loop");
+    console.error("[runLoop] agent loop failed:", err);
   }
 }

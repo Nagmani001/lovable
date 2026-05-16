@@ -1,7 +1,7 @@
 import { StateGraph, START, END, Command } from "@langchain/langgraph";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { StructuredToolInterface } from "@langchain/core/tools";
+import type { FailoverModel } from "./failoverModel.js";
 import {
   AIMessage,
   HumanMessage,
@@ -19,7 +19,7 @@ const MAX_FIXUP_ITERATIONS = 3;
 const MAX_FIXUP_AGENT_STEPS = 10;
 
 interface BuildGraphParams {
-  model: BaseChatModel;
+  model: FailoverModel;
   tools: StructuredToolInterface[];
   sandbox: Sandbox;
   projectBasePath: string;
@@ -38,7 +38,6 @@ export function buildAgentGraph(params: BuildGraphParams) {
   const toolNode = new ToolNode(tools, { handleToolErrors: true });
 
   const codeAgent = async (state: AgentStateType) => {
-    console.log("code agent ran");
     onStream({ type: "status", status: "thinking" });
     const response = await modelWithTools.invoke(state.messages);
     if (typeof response.content === "string" && response.content) {
@@ -51,7 +50,6 @@ export function buildAgentGraph(params: BuildGraphParams) {
   };
 
   const fixupAgent = async (state: AgentStateType) => {
-    console.log("fixup agent ran");
     onStream({ type: "status", status: "fixing" });
     const response = await modelWithTools.invoke(state.messages);
     if (typeof response.content === "string" && response.content) {
