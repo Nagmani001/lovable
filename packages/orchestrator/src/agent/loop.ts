@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { GlassBrain, wrapOpenAI } from "glassbrain-js";
 // import fs from "fs";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { StreamChunk } from "@repo/common/types";
@@ -20,6 +21,11 @@ interface AgentLoopParams {
   contextManager?: ContextManager;
 }
 
+// Glassbrain agent observability. Hardcoded key per current setup.
+const gb = new GlassBrain({
+  apiKey: "gb_acb0dfff2c1e45002937c4b8a964537a8eb7b9b1bec320a3",
+});
+
 const MAX_BUILD_ITERATIONS = 25;
 
 const MAX_FIXUP_ITERATIONS = 3;
@@ -30,11 +36,14 @@ export async function runAgentLoop(
   await new Promise((r) => setTimeout(r, 1000));
 
   // local llm
-  const client = new OpenAI({
-    apiKey: params.openRouterApiKey,
-    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-    // baseURL: "https://openrouter.ai/api/v1",
-  });
+  const client = wrapOpenAI(
+    new OpenAI({
+      apiKey: params.openRouterApiKey,
+      baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
+      // baseURL: "https://openrouter.ai/api/v1",
+    }),
+    gb,
+  );
 
   const systemPrompt = loadSystemPrompt();
   const toolDefinitions = loadToolDefinitions();
