@@ -1,3 +1,4 @@
+import "../observability/arize.js";
 import OpenAI from "openai";
 // import fs from "fs";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
