@@ -17,9 +17,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@contextcompany/langchain": "^1.2.1",
     "@langchain/core": "^1.1.45",
-    "@langchain/langgraph": "^1.3.0",
     "@langchain/google-genai": "^2.1.30",
+    "@langchain/langgraph": "^1.3.0",
     "@langchain/openai": "^1.4.5",
     "@repo/common": "workspace:^",
     "@repo/database": "workspace:^",

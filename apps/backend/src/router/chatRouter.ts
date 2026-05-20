@@ -66,6 +66,7 @@ chatRouter.post("/:projectId", async (req: Request, res: Response) => {
       message,
       conversationHistory: llmMessages,
       onStream,
+      userId: req.userId,
     });
 
     const lastAssistantMsg = updatedMessages

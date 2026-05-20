@@ -18,6 +18,10 @@ export interface RunLoopParams {
   consoleLogs?: string[];
   networkRequests?: string[];
   contextManager: ContextManager;
+  // Used for TCC tracing: projectId doubles as the chat session id, userId
+  // becomes filterable metadata on every run.
+  projectId: string;
+  userId?: string;
 }
 
 export async function runAgentLoopLG(
@@ -62,7 +66,16 @@ export async function runAgentLoopLG(
   try {
     const finalState = (await graph.invoke(
       { messages: inputMessages, fixupAttempt: 0 },
-      { recursionLimit: GRAPH_RECURSION_LIMIT },
+      {
+        recursionLimit: GRAPH_RECURSION_LIMIT,
+        metadata: {
+          projectId: params.projectId,
+          userId: params.userId ?? "anonymous",
+          environment: process.env.NODE_ENV ?? "development",
+          // Groups every turn of the same chat thread into one TCC session.
+          tcc: { sessionId: params.projectId },
+        },
+      },
     )) as { messages: import("@langchain/core/messages").BaseMessage[] };
 
     const all = fromLangChainMessages(finalState.messages);

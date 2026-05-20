@@ -1,3 +1,6 @@
+// TCC tracing — must initialize before any LangChain import below.
+import "./observability/tcc.js";
+
 import type { StreamChunk } from "@repo/common/types";
 import type {
   OrchestratorConfig,
@@ -67,6 +70,7 @@ export class OrchestratorLG {
     onStream: (chunk: StreamChunk) => void;
     consoleLogs?: string[];
     networkRequests?: string[];
+    userId?: string;
   }): Promise<ChatCompletionMessageParam[] | undefined> {
     const entry = this.sandboxManager.getSandbox(params.projectId);
     if (!entry) {
@@ -120,6 +124,8 @@ export class OrchestratorLG {
         consoleLogs: params.consoleLogs,
         networkRequests: params.networkRequests,
         contextManager,
+        projectId: params.projectId,
+        userId: params.userId,
       });
 
       if (!updatedMessages) return params.conversationHistory;
