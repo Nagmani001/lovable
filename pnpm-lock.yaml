@@ -300,8 +300,8 @@ importers:
   packages/orchestrator:
     dependencies:
       '@arizeai/openinference-instrumentation-openai':
-        specifier: ^4.1.1
-        version: 4.1.1
+        specifier: ^2.3.1
+        version: 2.3.1
       '@arizeai/openinference-semantic-conventions':
         specifier: ^2.3.0
         version: 2.3.0
@@ -488,11 +488,14 @@ packages:
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
 
-  '@arizeai/openinference-core@2.1.0':
-    resolution: {integrity: sha512-VSsmo/NKu/XB/KKGnwZe4UGoQ1EvsJYN0nrld8QQ9y2ecH5kj9YVNP3IGFtFCDXSdVJS2rLsV9Vkn/st1ttnsg==}
+  '@arizeai/openinference-core@1.0.3':
+    resolution: {integrity: sha512-X4nmUVgE8jdBDKStJ8huBZ60gm915eUCpi29BdgLm8/+8gZXctTUATL1v4dlGgCT+cv3VZmUgak74mJ2izx7kA==}
 
-  '@arizeai/openinference-instrumentation-openai@4.1.1':
-    resolution: {integrity: sha512-BzSg2HP4PXII/L0xz0s71ANE91r5isfHX2x921y0OVtxH2VwnDVJhcoNZcASTfPr3b1g5m18eM2aN2ngbNLqtg==}
+  '@arizeai/openinference-instrumentation-openai@2.3.1':
+    resolution: {integrity: sha512-8z5TEPwhj8fE7+6li2ufLP2jknkPTV7KAQwiNLj4/9IIz0o0dbFltm5O834bpE7LjzkGAqPt8CMVRDhpnw82IA==}
+
+  '@arizeai/openinference-semantic-conventions@2.0.0':
+    resolution: {integrity: sha512-9FJaC5O94xjR0rR3emNl4J/qQIutr5WAPaFgBnOtznU9u8ondXXDafRKcHfOqWUc2JxuQqEUzPEOYfkOR+pPZQ==}
 
   '@arizeai/openinference-semantic-conventions@2.3.0':
     resolution: {integrity: sha512-O2lRb8crb3dGFB50+Mu+J5pPP+9LzMzvAfS5aQd6D4i9LbCqz4fl8cHpVR6Tz22gj3TA54mwP3wN1ymfVJA+aA==}
@@ -6156,21 +6159,23 @@ snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
-  '@arizeai/openinference-core@2.1.0':
+  '@arizeai/openinference-core@1.0.3':
     dependencies:
-      '@arizeai/openinference-semantic-conventions': 2.3.0
+      '@arizeai/openinference-semantic-conventions': 2.0.0
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
 
-  '@arizeai/openinference-instrumentation-openai@4.1.1':
+  '@arizeai/openinference-instrumentation-openai@2.3.1':
     dependencies:
-      '@arizeai/openinference-core': 2.1.0
-      '@arizeai/openinference-semantic-conventions': 2.3.0
+      '@arizeai/openinference-core': 1.0.3
+      '@arizeai/openinference-semantic-conventions': 2.0.0
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/core': 1.30.1(@opentelemetry/api@1.9.1)
       '@opentelemetry/instrumentation': 0.46.0(@opentelemetry/api@1.9.1)
     transitivePeerDependencies:
       - supports-color
+
+  '@arizeai/openinference-semantic-conventions@2.0.0': {}
 
   '@arizeai/openinference-semantic-conventions@2.3.0': {}
 

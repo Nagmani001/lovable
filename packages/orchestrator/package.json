@@ -23,7 +23,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@arizeai/openinference-instrumentation-openai": "^4.1.1",
+    "@arizeai/openinference-instrumentation-openai": "^2.3.1",
     "@arizeai/openinference-semantic-conventions": "^2.3.0",
     "@aws-sdk/client-s3": "^3.997.0",
     "@google/genai": "^1.43.0",
