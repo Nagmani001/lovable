@@ -14,15 +14,8 @@ import {
   setGlobalHandler,
 } from "@contextcompany/langchain";
 
-// SDK throws if TCC_API_KEY is unset, so guard at boot to keep the backend
-// runnable before the env var is provisioned. Once the user adds the key,
-// tracing kicks in on next process start.
-if (process.env.TCC_API_KEY) {
-  setGlobalHandler(new TCCCallbackHandler());
-  console.log("[tcc] global LangChain handler registered");
-} else {
-  console.warn(
-    "[tcc] TCC_API_KEY not set — LangChain tracing disabled. " +
-      "Add TCC_API_KEY to apps/backend/.env to enable.",
-  );
-}
+const TCC_API_KEY = "tcc_prod_RDm7B3yE9Mv4y2c1va7Ase";
+
+setGlobalHandler(new TCCCallbackHandler({ apiKey: TCC_API_KEY }));
+
+console.log("[tcc] global LangChain handler registered");
