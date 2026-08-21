@@ -1,13 +1,9 @@
-import {
-  Orchestrator,
-  type OrchestratorConfig,
-} from "@repo/orchestrator/orchestrator";
+import { Orchestrator } from "@repo/orchestrator/orchestrator";
+import type { OrchestratorConfig } from "@repo/orchestrator/types";
 
-import { OrchestratorLG } from "@repo/orchestrator-lg/orchestrator";
+let orchestrator: Orchestrator | null = null;
 
-let orchestrator: OrchestratorLG | null = null;
-
-export function initOrchestrator(): OrchestratorLG {
+export function initOrchestrator(): Orchestrator {
   if (orchestrator) return orchestrator;
 
   const config: OrchestratorConfig = {
@@ -23,13 +19,13 @@ export function initOrchestrator(): OrchestratorLG {
     projectBasePath: "/home/user/project",
   };
 
-  orchestrator = new OrchestratorLG(config);
+  orchestrator = new Orchestrator(config);
   orchestrator.start();
 
   return orchestrator;
 }
 
-export function getOrchestrator(): OrchestratorLG {
+export function getOrchestrator(): Orchestrator {
   if (!orchestrator) {
     throw new Error(
       "Orchestrator not initialized. Call initOrchestrator() first.",

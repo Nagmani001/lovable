@@ -199,29 +199,18 @@ export class ContextManager {
     this.networkRequests = requests;
   }
 
-  generateInitializationContext(): string {
-    return initialContext;
-  }
-
-  /**
-   * Returns all files modified during this session.
-   */
   getModifiedFiles(): string[] {
     return [...this.allModifiedFiles];
   }
 
-  /**
-   * Clears the modified files tracker (call between sessions).
-   */
   clearModifiedFiles(): void {
     this.allModifiedFiles.clear();
   }
 
-  /**
-   * Generates a structured <useful-context> block for the TypeScript fix-up loop.
-   * Includes the filtered tsc errors and the full content of small files
-   * (< 100 lines) that have errors, so the AI can fix them without lov-view.
-   */
+  generateInitializationContext(): string {
+    return initialContext;
+  }
+
   generateTypeCheckContext(
     filteredErrors: string,
     errorFiles: string[],

@@ -2,10 +2,11 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import type { Sandbox } from "e2b";
 
-export class ProjectStorage {
+export class ProjectArtifactManager {
   private s3: S3Client;
   private bucket: string;
 
@@ -102,8 +103,6 @@ export class ProjectStorage {
   }
 
   async deleteProject(projectId: string): Promise<void> {
-    const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
-
     const keys = [
       `projects/${projectId}/project.tar.gz`,
       `projects/${projectId}/metadata.json`,
@@ -116,5 +115,40 @@ export class ProjectStorage {
           .catch(() => {}),
       ),
     );
+  }
+
+  async deployProject(
+    sandbox: Sandbox,
+    projectId: string,
+    projectBasePath: string = "/home/user/project",
+  ): Promise<string> {
+    const buildResult = await sandbox.commands.run(
+      `cd ${projectBasePath} && npm run build`,
+      { timeoutMs: 120_000 },
+    );
+
+    if (buildResult.exitCode !== 0) {
+      throw new Error(
+        `Build failed:\n${buildResult.stderr || buildResult.stdout}`,
+      );
+    }
+
+    await sandbox.commands.run(
+      `cd ${projectBasePath} && tar -cf /tmp/dist.tar -C dist .`,
+      { timeoutMs: 15_000 },
+    );
+
+    const distTarContent = await sandbox.files.read("/tmp/dist.tar");
+
+    await this.s3.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: `deployments/${projectId}/dist.tar`,
+        Body: Buffer.from(distTarContent, "binary"),
+        ContentType: "application/x-tar",
+      }),
+    );
+
+    return `https://${projectId}.your-domain.com`;
   }
 }

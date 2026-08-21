@@ -1,19 +1,22 @@
 import { Sandbox } from "e2b";
 import type { SandboxEntry, OrchestratorConfig } from "../types/index.js";
-import { ProjectStorage } from "../storage/s3.js";
+import { ProjectArtifactManager } from "../storage/project-artifact-manager.js";
 
 const VITE_PORT = 5173;
 const VSCODE_PORT = 3000;
 
 export class SandboxManager {
   private activeSandboxes: Map<string, SandboxEntry> = new Map();
-  private storage: ProjectStorage;
+  private projectArtifacts: ProjectArtifactManager;
   private config: OrchestratorConfig;
   private healthCheckInterval: ReturnType<typeof setInterval> | null = null;
 
-  constructor(config: OrchestratorConfig, storage: ProjectStorage) {
+  constructor(
+    config: OrchestratorConfig,
+    projectArtifacts: ProjectArtifactManager,
+  ) {
     this.config = config;
-    this.storage = storage;
+    this.projectArtifacts = projectArtifacts;
   }
 
   async getOrCreateSandbox(projectId: string): Promise<SandboxEntry> {
@@ -32,7 +35,10 @@ export class SandboxManager {
       timeoutMs: this.config.sandboxTimeoutMs,
     });
 
-    const restored = await this.storage.restoreProject(sandbox, projectId);
+    const restored = await this.projectArtifacts.restoreProject(
+      sandbox,
+      projectId,
+    );
 
     if (!restored) {
       console.log(`New project ${projectId}, using template defaults`);
@@ -80,7 +86,7 @@ export class SandboxManager {
     if (!entry) return;
 
     try {
-      await this.storage.persistProject(entry.sandbox, projectId);
+      await this.projectArtifacts.persistProject(entry.sandbox, projectId);
       console.log(`Persisted project ${projectId} to S3`);
     } catch (err) {
       console.error(`Failed to persist project ${projectId}:`, err);
@@ -96,7 +102,7 @@ export class SandboxManager {
     if (!entry) return;
 
     try {
-      await this.storage.persistProject(entry.sandbox, projectId);
+      await this.projectArtifacts.persistProject(entry.sandbox, projectId);
       console.log(`Persisted project ${projectId} before shutdown`);
     } catch (err) {
       console.error(`Failed to persist project ${projectId} on shutdown:`, err);

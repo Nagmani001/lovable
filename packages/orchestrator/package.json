@@ -12,8 +12,9 @@
     "./check": "./src/agent/checkCodeUtils.ts",
     "./parser": "./src/agent/parserUtils.ts",
     "./sandbox": "./src/sandbox/manager.ts",
-    "./storage": "./src/storage/s3.ts",
-    "./deploy": "./src/deploy/deployer.ts",
+    "./artifacts": "./src/storage/project-artifact-manager.ts",
+    "./storage": "./src/storage/project-artifact-manager.ts",
+    "./llm": "./src/llm/llm-manager.ts",
     "./types": "./src/types/index.ts"
   },
   "devDependencies": {
