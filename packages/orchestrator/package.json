@@ -24,10 +24,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.997.0",
     "@google/genai": "^1.43.0",
     "@repo/common": "workspace:^",
     "@repo/database": "workspace:^",
+    "@repo/storage": "workspace:^",
     "e2b": "^2.13.0",
     "openai": "^4.85.0",
     "zod": "^4.3.6"

@@ -1,29 +1,12 @@
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-  DeleteObjectCommand,
-} from "@aws-sdk/client-s3";
+import { createObjectStore, ObjectStore } from "@repo/storage";
+import type { ObjectStoreConfig } from "@repo/storage/types";
 import type { Sandbox } from "e2b";
 
 export class ProjectArtifactManager {
-  private s3: S3Client;
-  private bucket: string;
+  private store: ObjectStore;
 
-  constructor(config: {
-    region: string;
-    bucket: string;
-    accessKeyId: string;
-    secretAccessKey: string;
-  }) {
-    this.s3 = new S3Client({
-      region: config.region,
-      credentials: {
-        accessKeyId: config.accessKeyId,
-        secretAccessKey: config.secretAccessKey,
-      },
-    });
-    this.bucket = config.bucket;
+  constructor(config: ObjectStoreConfig) {
+    this.store = createObjectStore(config);
   }
 
   async persistProject(
@@ -40,25 +23,21 @@ export class ProjectArtifactManager {
 
     const tarContent = await sandbox.files.read("/tmp/project.tar.gz");
 
-    await this.s3.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: `projects/${projectId}/project.tar.gz`,
-        Body: Buffer.from(tarContent, "binary"),
-        ContentType: "application/gzip",
-      }),
+    await this.store.put(
+      `projects/${projectId}/project.tar.gz`,
+      Buffer.from(tarContent, "binary"),
+      { contentType: "application/gzip" },
     );
 
-    await this.s3.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: `projects/${projectId}/metadata.json`,
-        Body: JSON.stringify({
+    await this.store.put(
+      `projects/${projectId}/metadata.json`,
+      Buffer.from(
+        JSON.stringify({
           lastSaved: new Date().toISOString(),
           projectId,
         }),
-        ContentType: "application/json",
-      }),
+      ),
+      { contentType: "application/json" },
     );
   }
 
@@ -67,39 +46,25 @@ export class ProjectArtifactManager {
     projectId: string,
     projectBasePath: string = "/home/user/project",
   ): Promise<boolean> {
-    try {
-      const response = await this.s3.send(
-        new GetObjectCommand({
-          Bucket: this.bucket,
-          Key: `projects/${projectId}/project.tar.gz`,
-        }),
-      );
+    const body = await this.store.get(`projects/${projectId}/project.tar.gz`);
 
-      if (!response.Body) return false;
+    if (!body) return false;
 
-      const bodyBytes = await response.Body.transformToByteArray();
-      const bodyString = Buffer.from(bodyBytes).toString("binary");
+    const bodyString = body.toString("binary");
 
-      await sandbox.files.write("/tmp/project.tar.gz", bodyString);
+    await sandbox.files.write("/tmp/project.tar.gz", bodyString);
 
-      await sandbox.commands.run(
-        `mkdir -p "${projectBasePath}" && ` +
-          `cd "${projectBasePath}" && ` +
-          `tar -xzf /tmp/project.tar.gz`,
-        { timeoutMs: 30_000 },
-      );
+    await sandbox.commands.run(
+      `mkdir -p "${projectBasePath}" && ` +
+        `cd "${projectBasePath}" && ` +
+        `tar -xzf /tmp/project.tar.gz`,
+      { timeoutMs: 30_000 },
+    );
 
-      await sandbox.commands.run("rm -f /tmp/project.tar.gz");
+    await sandbox.commands.run("rm -f /tmp/project.tar.gz");
 
-      console.log(`Restored project ${projectId} from S3`);
-      return true;
-    } catch (err: unknown) {
-      const error = err as { name?: string };
-      if (error.name === "NoSuchKey") {
-        return false;
-      }
-      throw err;
-    }
+    console.log(`Restored project ${projectId} from object store`);
+    return true;
   }
 
   async deleteProject(projectId: string): Promise<void> {
@@ -109,11 +74,7 @@ export class ProjectArtifactManager {
     ];
 
     await Promise.all(
-      keys.map((Key) =>
-        this.s3
-          .send(new DeleteObjectCommand({ Bucket: this.bucket, Key }))
-          .catch(() => {}),
-      ),
+      keys.map((key) => this.store.delete(key).catch(() => {})),
     );
   }
 
@@ -140,13 +101,10 @@ export class ProjectArtifactManager {
 
     const distTarContent = await sandbox.files.read("/tmp/dist.tar");
 
-    await this.s3.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: `deployments/${projectId}/dist.tar`,
-        Body: Buffer.from(distTarContent, "binary"),
-        ContentType: "application/x-tar",
-      }),
+    await this.store.put(
+      `deployments/${projectId}/dist.tar`,
+      Buffer.from(distTarContent, "binary"),
+      { contentType: "application/x-tar" },
     );
 
     return `https://${projectId}.your-domain.com`;

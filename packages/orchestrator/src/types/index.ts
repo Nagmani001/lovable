@@ -1,4 +1,5 @@
 import type { Sandbox } from "e2b";
+import type { ObjectStoreConfig } from "@repo/storage/types";
 import type {
   ChatCompletionMessageParam,
   ChatCompletionTool,
@@ -18,10 +19,7 @@ export interface SandboxEntry {
 export interface OrchestratorConfig {
   e2bApiKey: string;
   openRouterApiKey: string;
-  s3Bucket: string;
-  s3Region: string;
-  awsAccessKeyId: string;
-  awsSecretAccessKey: string;
+  objectStore: ObjectStoreConfig;
   sandboxTemplate: string;
   sandboxTimeoutMs: number;
   heartbeatTimeoutMs: number;

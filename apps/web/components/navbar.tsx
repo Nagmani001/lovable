@@ -161,14 +161,6 @@ export function Navbar() {
             </button>
           </div>
         ) : null}
-        <button
-          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          className="w-9 h-9 rounded-lg border border-border bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Toggle theme"
-        >
-          <Sun className="size-4 scale-100 rotate-0 transition-transform dark:scale-0 dark:-rotate-90 absolute" />
-          <Moon className="size-4 scale-0 rotate-90 transition-transform dark:scale-100 dark:rotate-0 absolute" />
-        </button>
         {session ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -212,6 +204,23 @@ export function Navbar() {
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/billing">Billing</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  setTheme(resolvedTheme === "dark" ? "light" : "dark")
+                }
+              >
+                {resolvedTheme === "dark" ? (
+                  <>
+                    <Sun className="size-4" />
+                    Light mode
+                  </>
+                ) : (
+                  <>
+                    <Moon className="size-4" />
+                    Dark mode
+                  </>
+                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

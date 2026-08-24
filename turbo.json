@@ -22,7 +22,14 @@
         "AWS_ACCESS_KEY_ID",
         "AWS_SECRET_ACCESS_KEY",
         "AWS_REGION",
-        "S3_BUCKET"
+        "S3_BUCKET",
+        "S3_CDN_DOMAIN",
+        "OBJECT_STORE_PROVIDER",
+        "GCS_BUCKET",
+        "GCS_PROJECT_ID",
+        "GCS_SERVICE_ACCOUNT_KEY",
+        "GCS_SERVICE_ACCOUNT_KEY_PATH",
+        "GCS_CDN_DOMAIN"
       ],
       "outputs": [
         ".next/**",

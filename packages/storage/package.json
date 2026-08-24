@@ -1,0 +1,28 @@
+{
+  "name": "@repo/storage",
+  "version": "1.0.0",
+  "description": "Object store abstraction layer (protocol + provider implementations)",
+  "type": "module",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./objectStoreProtocol": "./src/objectStoreProtocol.ts",
+    "./aws-s3": "./src/aws-s3.ts",
+    "./gcp-gcs": "./src/gcp-gcs.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.997.0",
+    "@google-cloud/storage": "^8.0.1"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/node": "^24.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

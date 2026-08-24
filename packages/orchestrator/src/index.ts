@@ -16,12 +16,7 @@ export class Orchestrator {
   constructor(config: OrchestratorConfig) {
     this.config = config;
 
-    this.projectArtifacts = new ProjectArtifactManager({
-      region: config.s3Region,
-      bucket: config.s3Bucket,
-      accessKeyId: config.awsAccessKeyId,
-      secretAccessKey: config.awsSecretAccessKey,
-    });
+    this.projectArtifacts = new ProjectArtifactManager(config.objectStore);
 
     this.sandboxManager = new SandboxManager(config, this.projectArtifacts);
     this.llmManager = new LlmManager({

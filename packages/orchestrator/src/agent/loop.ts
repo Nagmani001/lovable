@@ -7,7 +7,11 @@ import { loadSystemPrompt, loadToolDefinitions } from "../tools/converter.js";
 import type { ContextManager } from "../context/context-manager.js";
 import { runBuildCheck, runTypeCheck } from "./checkCodeUtils.js";
 import { filterErrorsByFiles } from "./parserUtils.js";
-import { runSingleLLMTurn, runMiniAgentLoop } from "./llm-utils.js";
+import {
+  runSingleLLMTurn,
+  runMiniAgentLoop,
+  createLlmClientRotation,
+} from "./llm-utils.js";
 
 interface AgentLoopParams {
   openRouterApiKey: string;
@@ -29,12 +33,7 @@ export async function runAgentLoop(
 ): Promise<ChatCompletionMessageParam[]> {
   await new Promise((r) => setTimeout(r, 1000));
 
-  // local llm
-  const client = new OpenAI({
-    apiKey: params.openRouterApiKey,
-    baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
-    // baseURL: "https://openrouter.ai/api/v1",
-  });
+  const rotation = createLlmClientRotation(params.openRouterApiKey);
 
   const systemPrompt = loadSystemPrompt();
   const toolDefinitions = loadToolDefinitions();
@@ -74,7 +73,7 @@ export async function runAgentLoop(
     */
 
     const { finished } = await runSingleLLMTurn({
-      client,
+      rotation,
       messages,
       toolDefinitions: typedToolDefs,
       toolExecutor,
@@ -128,7 +127,7 @@ export async function runAgentLoop(
         });
 
         await runMiniAgentLoop({
-          client,
+          rotation,
           messages,
           toolDefinitions: typedToolDefs,
           toolExecutor,
@@ -180,7 +179,7 @@ export async function runAgentLoop(
         });
 
         await runMiniAgentLoop({
-          client,
+          rotation,
           messages,
           toolDefinitions: typedToolDefs,
           toolExecutor,

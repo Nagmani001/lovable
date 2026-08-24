@@ -3,8 +3,56 @@ import type { ChatCompletionMessageParam } from "openai/resources/chat/completio
 import type { StreamChunk } from "@repo/common/types";
 import { ToolExecutor } from "../tools/executor.js";
 
+const GEMINI_BASE_URL =
+  "https://generativelanguage.googleapis.com/v1beta/openai/";
+const MODEL = "gemini-3-flash-preview";
+const MAX_COMPLETION_TOKENS = 8096;
+
+function createLlmClient(apiKey: string): OpenAI {
+  return new OpenAI({
+    apiKey,
+    baseURL: GEMINI_BASE_URL,
+  });
+}
+
+export interface LlmClientRotation {
+  keys: string[];
+  currentKeyIndex: number;
+  client: OpenAI;
+  rotate: () => OpenAI;
+}
+
+export function createLlmClientRotation(
+  apiKeyString: string,
+): LlmClientRotation {
+  const keys = apiKeyString
+    .split(",")
+    .map((key) => key.trim())
+    .filter(Boolean);
+
+  if (keys.length === 0) {
+    throw new Error("No LLM API keys configured");
+  }
+
+  const rotation: LlmClientRotation = {
+    keys,
+    currentKeyIndex: 0,
+    client: createLlmClient(keys[0]!),
+    rotate: () => {
+      rotation.currentKeyIndex =
+        (rotation.currentKeyIndex + 1) % rotation.keys.length;
+      rotation.client = createLlmClient(
+        rotation.keys[rotation.currentKeyIndex]!,
+      );
+      return rotation.client;
+    },
+  };
+
+  return rotation;
+}
+
 export async function callLLMWithRetry(
-  client: OpenAI,
+  rotation: LlmClientRotation,
   messages: ChatCompletionMessageParam[],
   toolDefinitions: OpenAI.ChatCompletionTool[],
   logPrefix = "",
@@ -12,9 +60,9 @@ export async function callLLMWithRetry(
   let retryCount = 0;
   while (true) {
     try {
-      const response = await client.chat.completions.create({
-        model: "gemini-3-flash-preview",
-        max_completion_tokens: 8096,
+      const response = await rotation.client.chat.completions.create({
+        model: MODEL,
+        max_completion_tokens: MAX_COMPLETION_TOKENS,
         messages,
         tools: toolDefinitions,
       });
@@ -22,8 +70,9 @@ export async function callLLMWithRetry(
     } catch (err: any) {
       if (err?.status === 429) {
         const delay = Math.min(1500 * Math.pow(2, retryCount), 60000);
+        rotation.rotate();
         console.log(
-          `${logPrefix}Rate limited (429), retrying in ${delay}ms... (attempt ${retryCount + 1})`,
+          `${logPrefix}Rate limited (429), rotated to key ${rotation.currentKeyIndex + 1}/${rotation.keys.length}, retrying in ${delay}ms... (attempt ${retryCount + 1})`,
         );
         retryCount++;
         await new Promise((r) => setTimeout(r, delay));
@@ -40,7 +89,7 @@ export interface MiniLoopResult {
 }
 
 export async function runSingleLLMTurn(opts: {
-  client: OpenAI;
+  rotation: LlmClientRotation;
   messages: ChatCompletionMessageParam[];
   toolDefinitions: OpenAI.ChatCompletionTool[];
   toolExecutor: ToolExecutor;
@@ -49,7 +98,7 @@ export async function runSingleLLMTurn(opts: {
   logPrefix?: string;
 }): Promise<{ finished: boolean }> {
   const {
-    client,
+    rotation,
     messages,
     toolDefinitions,
     toolExecutor,
@@ -59,7 +108,7 @@ export async function runSingleLLMTurn(opts: {
   } = opts;
 
   const response = await callLLMWithRetry(
-    client,
+    rotation,
     messages,
     toolDefinitions,
     logPrefix,
@@ -109,7 +158,7 @@ export async function runSingleLLMTurn(opts: {
 }
 
 export async function runMiniAgentLoop(opts: {
-  client: OpenAI;
+  rotation: LlmClientRotation;
   messages: ChatCompletionMessageParam[];
   toolDefinitions: OpenAI.ChatCompletionTool[];
   toolExecutor: ToolExecutor;
