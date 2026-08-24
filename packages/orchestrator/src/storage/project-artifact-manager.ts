@@ -21,11 +21,13 @@ export class ProjectArtifactManager {
       { timeoutMs: 30_000 },
     );
 
-    const tarContent = await sandbox.files.read("/tmp/project.tar.gz");
+    const tarContent = await sandbox.files.read("/tmp/project.tar.gz", {
+      format: "bytes",
+    });
 
     await this.store.put(
       `projects/${projectId}/project.tar.gz`,
-      Buffer.from(tarContent, "binary"),
+      Buffer.from(tarContent),
       { contentType: "application/gzip" },
     );
 
@@ -50,9 +52,12 @@ export class ProjectArtifactManager {
 
     if (!body) return false;
 
-    const bodyString = body.toString("binary");
+    const arrayBuffer = body.buffer.slice(
+      body.byteOffset,
+      body.byteOffset + body.byteLength,
+    ) as ArrayBuffer;
 
-    await sandbox.files.write("/tmp/project.tar.gz", bodyString);
+    await sandbox.files.write("/tmp/project.tar.gz", arrayBuffer);
 
     await sandbox.commands.run(
       `mkdir -p "${projectBasePath}" && ` +
@@ -99,11 +104,13 @@ export class ProjectArtifactManager {
       { timeoutMs: 15_000 },
     );
 
-    const distTarContent = await sandbox.files.read("/tmp/dist.tar");
+    const distTarContent = await sandbox.files.read("/tmp/dist.tar", {
+      format: "bytes",
+    });
 
     await this.store.put(
       `deployments/${projectId}/dist.tar`,
-      Buffer.from(distTarContent, "binary"),
+      Buffer.from(distTarContent),
       { contentType: "application/x-tar" },
     );
 
