@@ -32,5 +32,5 @@ RUN adduser --system --uid 1001 expressjs
 USER expressjs
 COPY --from=builder /app .
 
-EXPOSE 3001
+EXPOSE 5001
 CMD ["tsx","apps/backend/src/index.ts"] 

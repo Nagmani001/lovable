@@ -11,6 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth";
 import { toast } from "@repo/ui/lib/toast";
 import { OtpDialog } from "@/components/otp-dialog";
+import { GoogleButton } from "@/components/google-button";
 import { useRouter } from "next/navigation";
 
 interface SignupInputs {
@@ -63,7 +64,7 @@ export function SignUpForm() {
       } else {
         toast.success("Email verified successfully!");
         setOtpOpen(false);
-        router.push("/signin");
+        router.push("/projects");
       }
     },
     onError: (err) => {
@@ -155,6 +156,19 @@ export function SignUpForm() {
           Create Account
         </Button>
       </form>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">
+            or continue with
+          </span>
+        </div>
+      </div>
+
+      <GoogleButton />
 
       <p className="text-center text-sm text-muted-foreground mt-6">
         Already have an account?{" "}

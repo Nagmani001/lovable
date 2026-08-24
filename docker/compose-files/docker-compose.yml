@@ -28,10 +28,10 @@ services:
       dockerfile: docker/backend/Dockerfile
       context: ../../
     ports:
-      - "3001:3001"
+      - "5001:5001"
     environment:
-      - PORT=3001
-      - FRONTEND_URL_DEPLOYED=http://web:3000
+      - PORT=5001
+      - FRONTEND_URL_DEPLOYED=http://web:5000
       - SMTP_HOST=mailhog
       - SMTP_PORT=1025
       - SMTP_USER=user
@@ -41,7 +41,7 @@ services:
       database:
         condition: service_healthy
     healthcheck:
-      test: [ "CMD", "node", "-e", "fetch('http://localhost:3001/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))" ]
+      test: [ "CMD", "node", "-e", "fetch('http://localhost:5001/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))" ]
       interval: 1s
       timeout: 10s
       retries: 10
@@ -52,9 +52,9 @@ services:
       dockerfile: docker/web/Dockerfile
       context: ../../
     ports:
-      - "3000:3000"
+      - "5000:5000"
     environment:
-      - BACKEND_URL=http://backend:3001
+      - BACKEND_URL=http://backend:5001
     depends_on:
       backend:
         condition: service_healthy

@@ -23,7 +23,7 @@ echo "Starting auxilary services"
 docker compose -f "$PROJECT_ROOT/docker/compose-files/docker-compose-integration-test.yml" up -d --wait
 
 echo '🟡 - Waiting for database to be ready...'
-$PROJECT_ROOT/apps/integration-test/src/scripts/wait-for-it.sh localhost:5432 -- echo "database has started"
+$PROJECT_ROOT/apps/integration-test/src/scripts/wait-for-it.sh localhost:5433 -- echo "database has started"
 
 echo "Applying migration"
 cd $PROJECT_ROOT/packages/database && pnpm dlx prisma migrate dev --name init --schema "$PROJECT_ROOT/packages/database/prisma/schema.prisma"
@@ -38,7 +38,7 @@ BACKEND_PID=$!
 echo "backend pid $BACKEND_PID"
 
 echo '🟡 - Waiting for backend to be ready...'
-$PROJECT_ROOT/apps/integration-test/src/scripts/wait-for-it.sh localhost:3001 -- echo "backend has started"
+$PROJECT_ROOT/apps/integration-test/src/scripts/wait-for-it.sh localhost:5001 -- echo "backend has started"
 
 echo "Run integration test"
 cd $PROJECT_ROOT/apps/integration-test && vitest --run

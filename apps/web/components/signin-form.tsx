@@ -10,6 +10,7 @@ import { LovableLogo } from "@repo/ui/components/lovable-logo";
 import { useMutation } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth";
 import { toast } from "@repo/ui/lib/toast";
+import { GoogleButton } from "@/components/google-button";
 import { useRouter } from "next/navigation";
 
 interface SigninInputs {
@@ -95,6 +96,19 @@ export function SignInForm() {
           Sign In
         </Button>
       </form>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">
+            or continue with
+          </span>
+        </div>
+      </div>
+
+      <GoogleButton />
 
       <p className="text-center text-sm text-muted-foreground mt-6">
         Don&apos;t have an account?{" "}

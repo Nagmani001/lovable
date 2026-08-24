@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import axios from "./lib/utils";
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5001";
 
 describe("GET /", () => {
   it("should check the health endpoint and return healthy", async () => {

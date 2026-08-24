@@ -1,5 +1,4 @@
 import express, { Request, Response } from "express";
-
 import { toNodeHandler } from "better-auth/node";
 import type { Server } from "node:http";
 import { dirname } from "path";
@@ -28,7 +27,7 @@ app.use(
   cors({
     origin: process.env.CORS_ORIGINS
       ? process.env.CORS_ORIGINS.split(",")
-      : ["http://localhost:3000", "http://localhost:3001"],
+      : ["http://localhost:5000"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   }),

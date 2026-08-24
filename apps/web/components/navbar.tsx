@@ -46,6 +46,7 @@ export function Navbar() {
   const router = useRouter();
   const [isDeploying, setIsDeploying] = useState(false);
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
+  const [failedImageSrc, setFailedImageSrc] = useState<string | null>(null);
 
   const projectId = useMemo(() => {
     if (!pathname || !pathname.startsWith("/project/")) return null;
@@ -175,11 +176,13 @@ export function Navbar() {
                 className="size-9 rounded-full border border-border bg-secondary text-foreground overflow-hidden flex items-center justify-center"
                 aria-label="Open user menu"
               >
-                {imageUrl ? (
+                {imageUrl && imageUrl !== failedImageSrc ? (
                   <img
                     src={imageUrl}
                     alt={user?.name ?? "User avatar"}
                     className="size-full object-cover"
+                    referrerPolicy="no-referrer"
+                    onError={() => setFailedImageSrc(imageUrl)}
                   />
                 ) : (
                   <span className="text-sm font-semibold">{userInitial}</span>
