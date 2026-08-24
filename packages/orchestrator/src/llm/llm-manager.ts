@@ -82,9 +82,23 @@ export class LlmManager {
 
     const llmMessages: ChatCompletionMessageParam[] =
       params.conversationHistory.map((msg, idx) => {
-        if (idx === lastUserIdx && typeof msg.content === "string") {
+        if (idx !== lastUserIdx) return msg;
+
+        if (typeof msg.content === "string") {
           return { ...msg, content: `${usefulContext}\n\n${msg.content}` };
         }
+
+        if (Array.isArray(msg.content)) {
+          const content = [
+            { type: "text", text: `${usefulContext}\n\n` },
+            ...msg.content,
+          ] as Array<
+            | { type: "text"; text: string }
+            | { type: "image_url"; image_url: { url: string } }
+          >;
+          return { ...msg, content } as ChatCompletionMessageParam;
+        }
+
         return msg;
       });
 

@@ -5,6 +5,10 @@ export interface ObjectStorePutOptions {
   cacheControl?: string;
 }
 
+export interface ObjectStoreGetOptions {
+  expiresInSeconds?: number;
+}
+
 export interface S3ObjectStoreConfig {
   provider: "s3";
   bucket: string;

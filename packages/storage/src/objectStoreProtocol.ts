@@ -1,4 +1,4 @@
-import type { ObjectStorePutOptions } from "./types.js";
+import type { ObjectStoreGetOptions, ObjectStorePutOptions } from "./types.js";
 
 export abstract class ObjectStore {
   abstract readonly provider: "s3" | "gcs";
@@ -14,4 +14,14 @@ export abstract class ObjectStore {
   abstract delete(key: string): Promise<void>;
 
   abstract getPublicUrl(key: string): Promise<string>;
+
+  abstract getSignedPutUrl(
+    key: string,
+    options?: ObjectStorePutOptions,
+  ): Promise<string>;
+
+  abstract getSignedGetUrl(
+    key: string,
+    options?: ObjectStoreGetOptions,
+  ): Promise<string>;
 }

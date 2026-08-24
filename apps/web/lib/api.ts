@@ -100,15 +100,46 @@ export async function getProjectHistory(projectId: string) {
   }
 }
 
+export interface ImageUploadUrls {
+  imageKey: string;
+  imageUploadUrl: string;
+  thumbnailKey: string;
+  thumbnailUploadUrl: string;
+}
+
+export async function requestImageUpload(
+  projectId: string,
+  contentType: string,
+): Promise<ImageUploadUrls> {
+  const res = await axios.post(
+    `${BASE_URL}/api/v1/chat/${projectId}/upload`,
+    { contentType },
+    { withCredentials: true },
+  );
+  return res.data;
+}
+
+export async function uploadImageToSignedUrl(
+  uploadUrl: string,
+  blob: Blob,
+  contentType: string,
+): Promise<void> {
+  await axios.put(uploadUrl, blob, {
+    headers: { "Content-Type": contentType },
+  });
+}
+
 export async function* streamChat(
   projectId: string,
   message: string,
+  imageKey?: string,
+  thumbnailKey?: string,
 ): AsyncGenerator<{ type: string; data: Record<string, unknown> }> {
   const res = await fetch(`${BASE_URL}/api/v1/chat/${projectId}`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, imageKey, thumbnailKey }),
   });
 
   if (!res.ok) {

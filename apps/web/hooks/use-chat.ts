@@ -2,11 +2,15 @@
 
 import { useState, useCallback } from "react";
 import { streamChat } from "@/lib/api";
+import { uploadChatImage } from "@/lib/chat-image";
+import type { UploadedImageKeys } from "@/lib/chat-image";
 
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant";
   content: string;
+  imageKey?: string;
+  thumbnailKey?: string;
   timestamp: Date;
 }
 
@@ -16,6 +20,8 @@ export interface ToolCallInfo {
   path?: string;
 }
 
+export type ChatImageAttachment = File | UploadedImageKeys;
+
 export function useChat(projectId: string | null) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -23,11 +29,17 @@ export function useChat(projectId: string | null) {
   const [agentStatus, setAgentStatus] = useState<string>("idle");
 
   const addMessage = useCallback(
-    (role: "user" | "assistant", content: string) => {
+    (
+      role: "user" | "assistant",
+      content: string,
+      image?: { imageKey?: string; thumbnailKey?: string },
+    ) => {
       const msg: ChatMessage = {
         id: crypto.randomUUID(),
         role,
         content,
+        ...(image?.imageKey ? { imageKey: image.imageKey } : {}),
+        ...(image?.thumbnailKey ? { thumbnailKey: image.thumbnailKey } : {}),
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, msg]);
@@ -37,10 +49,29 @@ export function useChat(projectId: string | null) {
   );
 
   const sendMessage = useCallback(
-    async (content: string) => {
+    async (content: string, attachment?: ChatImageAttachment) => {
       if (!projectId || isStreaming) return;
 
-      addMessage("user", content);
+      let imageKey: string | undefined;
+      let thumbnailKey: string | undefined;
+
+      if (attachment) {
+        try {
+          if (attachment instanceof File) {
+            const uploaded = await uploadChatImage(projectId, attachment);
+            imageKey = uploaded.imageKey;
+            thumbnailKey = uploaded.thumbnailKey;
+          } else {
+            imageKey = attachment.imageKey;
+            thumbnailKey = attachment.thumbnailKey;
+          }
+        } catch (err) {
+          console.error("Image upload failed:", err);
+          return;
+        }
+      }
+
+      addMessage("user", content, { imageKey, thumbnailKey });
       setIsStreaming(true);
       setAgentStatus("thinking");
 
@@ -58,7 +89,12 @@ export function useChat(projectId: string | null) {
       ]);
 
       try {
-        for await (const event of streamChat(projectId, content)) {
+        for await (const event of streamChat(
+          projectId,
+          content,
+          imageKey,
+          thumbnailKey,
+        )) {
           switch (event.type) {
             case "text": {
               const textData = event.data as { content: string };
@@ -131,12 +167,16 @@ export function useChat(projectId: string | null) {
         contents: string;
         from: "USER" | "ASSISTANT";
         createdAT: string;
+        imageKey?: string | null;
+        thumbnailKey?: string | null;
       }>,
     ) => {
       const msgs: ChatMessage[] = history.map((h) => ({
         id: crypto.randomUUID(),
         role: h.from === "USER" ? "user" : "assistant",
         content: h.contents,
+        ...(h.imageKey ? { imageKey: h.imageKey } : {}),
+        ...(h.thumbnailKey ? { thumbnailKey: h.thumbnailKey } : {}),
         timestamp: new Date(h.createdAT),
       }));
       setMessages(msgs);

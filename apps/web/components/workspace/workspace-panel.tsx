@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Monitor, Code, ExternalLink, RefreshCw } from "lucide-react";
+import { Monitor, Code, ExternalLink, RefreshCw, Loader2 } from "lucide-react";
 import { WorkspaceProcessingScreen } from "./workspace-processing-screen";
 
 interface WorkspacePanelProps {
   previewUrl: string | null;
   vscodeUrl: string | null;
   showProcessingScreen?: boolean;
+  isConnecting?: boolean;
   processingPrompt?: string;
   agentStatus?: string;
 }
@@ -16,6 +17,7 @@ export function WorkspacePanel({
   previewUrl,
   vscodeUrl,
   showProcessingScreen = false,
+  isConnecting = false,
   processingPrompt = "",
   agentStatus = "idle",
 }: WorkspacePanelProps) {
@@ -107,9 +109,59 @@ export function WorkspacePanel({
 
       {/* Iframe panels - both stay mounted so state is preserved */}
       <div className="relative flex-1 bg-background">
-        {showProcessingScreen ? (
+        {isConnecting ? (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <p className="text-sm">Starting your development environment...</p>
+          </div>
+        ) : (
+          <>
+            {previewUrl ? (
+              <iframe
+                key={previewKey}
+                src={previewUrl}
+                className={`absolute inset-0 w-full h-full border-0 ${
+                  activeTab === "preview" ? "block" : "hidden"
+                }`}
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                title="App Preview"
+              />
+            ) : (
+              <div
+                className={`absolute inset-0 flex items-center justify-center text-muted-foreground ${
+                  activeTab === "preview" ? "flex" : "hidden"
+                }`}
+              >
+                Waiting for sandbox to start...
+              </div>
+            )}
+
+            {vscodeUrl ? (
+              <iframe
+                key={codeKey}
+                src={vscodeUrl}
+                className={`absolute inset-0 w-full h-full border-0 ${
+                  activeTab === "code" ? "block" : "hidden"
+                }`}
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals"
+                title="VS Code Editor"
+              />
+            ) : (
+              <div
+                className={`absolute inset-0 flex items-center justify-center text-muted-foreground ${
+                  activeTab === "code" ? "flex" : "hidden"
+                }`}
+              >
+                Waiting for VS Code to start...
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Processing overlay - keeps the real preview visible underneath */}
+        {showProcessingScreen && (
           <div
-            className={`absolute inset-0 ${
+            className={`absolute inset-0 z-10 ${
               activeTab === "preview" ? "block" : "hidden"
             }`}
           >
@@ -117,44 +169,6 @@ export function WorkspacePanel({
               prompt={processingPrompt}
               agentStatus={agentStatus}
             />
-          </div>
-        ) : previewUrl ? (
-          <iframe
-            key={previewKey}
-            src={previewUrl}
-            className={`absolute inset-0 w-full h-full border-0 ${
-              activeTab === "preview" ? "block" : "hidden"
-            }`}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-            title="App Preview"
-          />
-        ) : (
-          <div
-            className={`absolute inset-0 flex items-center justify-center text-muted-foreground ${
-              activeTab === "preview" ? "flex" : "hidden"
-            }`}
-          >
-            Waiting for sandbox to start...
-          </div>
-        )}
-
-        {vscodeUrl ? (
-          <iframe
-            key={codeKey}
-            src={vscodeUrl}
-            className={`absolute inset-0 w-full h-full border-0 ${
-              activeTab === "code" ? "block" : "hidden"
-            }`}
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals"
-            title="VS Code Editor"
-          />
-        ) : (
-          <div
-            className={`absolute inset-0 flex items-center justify-center text-muted-foreground ${
-              activeTab === "code" ? "flex" : "hidden"
-            }`}
-          >
-            Waiting for VS Code to start...
           </div>
         )}
       </div>

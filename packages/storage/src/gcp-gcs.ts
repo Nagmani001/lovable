@@ -1,7 +1,11 @@
 import { Storage } from "@google-cloud/storage";
 import type { SaveOptions, StorageOptions } from "@google-cloud/storage";
 import { ObjectStore } from "./objectStoreProtocol.js";
-import type { ObjectStorePutOptions, GcsObjectStoreConfig } from "./types.js";
+import type {
+  ObjectStoreGetOptions,
+  ObjectStorePutOptions,
+  GcsObjectStoreConfig,
+} from "./types.js";
 
 export class GcsObjectStore extends ObjectStore {
   readonly provider = "gcs" as const;
@@ -54,6 +58,31 @@ export class GcsObjectStore extends ObjectStore {
       .bucket(this.bucket)
       .file(key)
       .delete({ ignoreNotFound: true });
+  }
+
+  async getSignedPutUrl(
+    key: string,
+    options?: ObjectStorePutOptions,
+  ): Promise<string> {
+    const file = this.storage.bucket(this.bucket).file(key);
+    const [url] = await file.getSignedUrl({
+      action: "write",
+      contentType: options?.contentType,
+      expires: Date.now() + 15 * 60 * 1000,
+    });
+    return url;
+  }
+
+  async getSignedGetUrl(
+    key: string,
+    options?: ObjectStoreGetOptions,
+  ): Promise<string> {
+    const file = this.storage.bucket(this.bucket).file(key);
+    const [url] = await file.getSignedUrl({
+      action: "read",
+      expires: Date.now() + (options?.expiresInSeconds ?? 3600) * 1000,
+    });
+    return url;
   }
 
   async getPublicUrl(key: string): Promise<string> {

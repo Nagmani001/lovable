@@ -1,25 +1,66 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { PromptInput } from "@repo/ui/components/prompt-input";
 import { createProject } from "@/lib/api";
+import { uploadChatImage } from "@/lib/chat-image";
 
 export function PromptSection() {
   const [prompt, setPrompt] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState<
+    string | null
+  >(null);
   const [isCreating, setIsCreating] = useState(false);
   const router = useRouter();
 
+  // Clean up the object URL when the component unmounts
+  useEffect(() => {
+    return () => {
+      if (selectedImagePreview) {
+        URL.revokeObjectURL(selectedImagePreview);
+      }
+    };
+  }, [selectedImagePreview]);
+
+  const handleAttachImage = (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+
+    setSelectedImage(file);
+    setSelectedImagePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setSelectedImagePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+  };
+
   const handleSubmit = async () => {
     const trimmed = prompt.trim();
-    if (!trimmed || isCreating) return;
+    if ((!trimmed && !selectedImage) || isCreating) return;
 
     try {
       setIsCreating(true);
-      const result = await createProject(trimmed);
-      router.push(`/project/${result.projectId}/${result.prompt}`);
+      const result = await createProject(
+        trimmed || "Build from the attached image",
+      );
+
+      let query = "";
+      if (selectedImage) {
+        const uploaded = await uploadChatImage(result.projectId, selectedImage);
+        query = `?imageKey=${encodeURIComponent(uploaded.imageKey)}&thumbnailKey=${encodeURIComponent(uploaded.thumbnailKey)}`;
+      }
+
+      router.push(`/project/${result.projectId}/${result.prompt}${query}`);
     } catch (err) {
       console.error("Failed to create project:", err);
       setIsCreating(false);
@@ -47,6 +88,9 @@ export function PromptSection() {
           value={prompt}
           onChange={setPrompt}
           onSubmit={handleSubmit}
+          onAttachImage={handleAttachImage}
+          attachedImagePreview={selectedImagePreview}
+          onRemoveImage={handleRemoveImage}
           placeholder="Ask Lovable to create an interface..."
         />
 

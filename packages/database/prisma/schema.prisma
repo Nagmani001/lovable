@@ -101,15 +101,17 @@ enum ProjectStatus {
 }
 
 model ConversationHistory {
-  id        String           @id @default(uuid())
-  projectId String
-  project   Project          @relation(fields: [projectId], references: [id])
-  contents  String
-  hidden    Boolean
-  from      MessageFrom
-  toolCall  ToolCall?
-  type      ConversationType
-  createdAT DateTime         @default(now())
+  id           String           @id @default(uuid())
+  projectId    String
+  project      Project          @relation(fields: [projectId], references: [id])
+  contents     String
+  hidden       Boolean
+  from         MessageFrom
+  toolCall     ToolCall?
+  type         ConversationType
+  imageKey     String?
+  thumbnailKey String?
+  createdAT    DateTime         @default(now())
 }
 
 enum ConversationType {

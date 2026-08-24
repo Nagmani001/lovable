@@ -4,8 +4,13 @@ import {
   GetObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { ObjectStore } from "./objectStoreProtocol.js";
-import type { ObjectStorePutOptions, S3ObjectStoreConfig } from "./types.js";
+import type {
+  ObjectStoreGetOptions,
+  ObjectStorePutOptions,
+  S3ObjectStoreConfig,
+} from "./types.js";
 
 export class S3ObjectStore extends ObjectStore {
   readonly provider = "s3" as const;
@@ -70,6 +75,28 @@ export class S3ObjectStore extends ObjectStore {
       return `https://${this.cdnDomain}/${key}`;
     }
     return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+  }
+
+  async getSignedPutUrl(
+    key: string,
+    options?: ObjectStorePutOptions,
+  ): Promise<string> {
+    const command = new PutObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ContentType: options?.contentType,
+    });
+    return getSignedUrl(this.client, command, { expiresIn: 60 * 15 });
+  }
+
+  async getSignedGetUrl(
+    key: string,
+    options?: ObjectStoreGetOptions,
+  ): Promise<string> {
+    const command = new GetObjectCommand({ Bucket: this.bucket, Key: key });
+    return getSignedUrl(this.client, command, {
+      expiresIn: options?.expiresInSeconds ?? 60 * 60,
+    });
   }
 
   private isNotFoundError(err: unknown): boolean {
