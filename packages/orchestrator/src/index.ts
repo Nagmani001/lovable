@@ -77,6 +77,16 @@ export class Orchestrator {
     });
   }
 
+  async prettifyPrompt(params: {
+    message: string;
+    conversationHistory: ChatCompletionMessageParam[];
+  }): Promise<string> {
+    return this.llmManager.prettifyPrompt({
+      conversationHistory: params.conversationHistory,
+      message: params.message,
+    });
+  }
+
   async heartbeat(projectId: string): Promise<boolean> {
     return this.sandboxManager.heartbeat(projectId);
   }

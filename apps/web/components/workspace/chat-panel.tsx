@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, ImagePlus, X } from "lucide-react";
+import { Send, Loader2, ImagePlus, X, Sparkles } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Dialog, DialogContent, DialogTitle } from "@repo/ui/components/dialog";
 import { useChatImage } from "@/hooks/use-chat-image";
+import { prettifyPrompt } from "@/lib/api";
 import type { ChatMessage, ChatImageAttachment } from "@/hooks/use-chat";
 import type { UploadedImageKeys } from "@/lib/chat-image";
 
@@ -61,6 +62,7 @@ export function ChatPanel({
   agentStatus,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
+  const [isPrettifying, setIsPrettifying] = useState(false);
   const [attachment, setAttachment] = useState<ChatImageAttachment | null>(
     initialImage ?? null,
   );
@@ -184,6 +186,31 @@ export function ChatPanel({
     // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
+    }
+  };
+
+  const handlePrettify = async () => {
+    const trimmed = input.trim();
+    if (!trimmed || isPrettifying || isStreaming || isConnecting) return;
+
+    setIsPrettifying(true);
+    try {
+      const prettified = await prettifyPrompt(projectId, trimmed);
+      if (prettified) {
+        setInput(prettified);
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "auto";
+          textareaRef.current.style.height = `${Math.min(
+            textareaRef.current.scrollHeight,
+            200,
+          )}px`;
+          textareaRef.current.focus();
+        }
+      }
+    } catch (err) {
+      console.error("Failed to prettify prompt:", err);
+    } finally {
+      setIsPrettifying(false);
     }
   };
 
@@ -395,6 +422,21 @@ export function ChatPanel({
             rows={1}
             className="flex-1 bg-transparent resize-none outline-none text-sm min-h-[36px] max-h-[200px] py-1.5"
           />
+          <button
+            onClick={handlePrettify}
+            disabled={
+              !input.trim() || isStreaming || isConnecting || isPrettifying
+            }
+            className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:hover:text-muted-foreground disabled:hover:bg-transparent"
+            title="Rewrite your prompt to be clearer and more detailed"
+          >
+            {isPrettifying ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            Prettify
+          </button>
           <button
             onClick={handleSubmit}
             disabled={

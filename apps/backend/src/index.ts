@@ -1,20 +1,21 @@
 import express, { Request, Response } from "express";
 import { toNodeHandler } from "better-auth/node";
-import type { Server } from "node:http";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import path from "path";
 import { config } from "dotenv";
 import cors from "cors";
 import { shutdown } from "./lib/utils";
-import { initEmail } from "@repo/email/email";
+import { initEmail } from "./lib/email";
 import { auth } from "./lib/auth";
 import { projectRouter } from "./router/projectRouter";
 import { authMiddleware } from "./middleware/authMiddleware";
 import { initOrchestrator, shutdownOrchestrator } from "./lib/orchestrator";
+import { initRedis, closeRedis } from "./lib/redis";
 import { chatRouter } from "./router/chatRouter";
 import { sandboxRouter } from "./router/sandboxRouter";
 import { deployRouter } from "./router/deployRouter";
+import { Server } from "http";
 
 const app = express();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,23 +55,9 @@ app.use("/api/v1/sandbox", authMiddleware, sandboxRouter);
 app.use("/api/v1/deploy", authMiddleware, deployRouter);
 
 export let server: Server;
-
 async function main() {
-  if (process.env.RESEND_API_KEY) {
-    initEmail({
-      resendApiKey: process.env.RESEND_API_KEY,
-    });
-  } else {
-    initEmail({
-      smtp: {
-        host: process.env.SMTP_HOST!,
-        port: Number(process.env.SMTP_PORT!),
-        user: process.env.SMTP_USER!,
-        password: process.env.SMTP_PASSWORD!,
-      },
-    });
-  }
-
+  initEmail();
+  await initRedis();
   initOrchestrator();
 
   server = app.listen(process.env.PORT, () => {
@@ -81,14 +68,18 @@ main();
 
 process.on("SIGINT", async () => {
   await shutdownOrchestrator();
+  await closeRedis();
   shutdown(0);
 });
 process.on("SIGTERM", async () => {
   await shutdownOrchestrator();
+  await closeRedis();
   shutdown(0);
 });
+
 process.on("uncaughtException", async (err) => {
   console.error("uncaught:", err);
   await shutdownOrchestrator();
+  await closeRedis();
   shutdown(1);
 });

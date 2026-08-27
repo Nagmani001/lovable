@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: lovable
+data:
+  PORT: "5001"
+  BETTER_AUTH_URL: "https://lovable.nagmani.site"
+  CORS_ORIGINS: "http://localhost:5000,https://lovable.nagmani.site"
+  TRUSTED_ORIGINS: "http://localhost:5000,https://lovable.nagmani.site"
+  OBJECT_STORE_PROVIDER: "gcs"
+  AWS_REGION: "ap-south-1"
+  S3_BUCKET: "lovablebucketnagmani"
+  S3_CDN_DOMAIN: ""
+  GCS_BUCKET: "lovable-dev"
+  GCS_PROJECT_ID: "gen-lang-client-0855940623"
+  GCS_CDN_DOMAIN: ""
+  E2B_TEMPLATE: "nagmaniprasad25/lovable-template"
+  ARIZE_PROJECT_NAME: "lovable-orchestrator"

@@ -1,3 +1,6 @@
+export * from "./queue.js";
+export * from "./deploy.js";
+
 export interface TextStreamChunk {
   type: "text";
   content: string;

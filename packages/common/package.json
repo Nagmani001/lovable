@@ -10,9 +10,10 @@
   "devDependencies": {
     "@repo/typescript-config": "workspace:*"
   },
-  "exports":{
-    "./zod":"./src/zod/index.ts",
-    "./types":"./src/types/index.ts"
+  "exports": {
+    "./zod": "./src/zod/index.ts",
+    "./data": "./src/data/consts.ts",
+    "./types": "./src/types/index.ts"
   },
   "keywords": [],
   "author": "",

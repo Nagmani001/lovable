@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { PromptInput } from "@repo/ui/components/prompt-input";
-import { createProject } from "@/lib/api";
+import { createProject, prettifyPromptHome } from "@/lib/api";
 import { uploadChatImage } from "@/lib/chat-image";
 
 export function PromptSection() {
@@ -15,6 +15,7 @@ export function PromptSection() {
     string | null
   >(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [isPrettifying, setIsPrettifying] = useState(false);
   const router = useRouter();
 
   // Clean up the object URL when the component unmounts
@@ -67,6 +68,23 @@ export function PromptSection() {
     }
   };
 
+  const handlePrettify = async () => {
+    const trimmed = prompt.trim();
+    if (!trimmed || isPrettifying) return;
+
+    setIsPrettifying(true);
+    try {
+      const prettified = await prettifyPromptHome(trimmed);
+      if (prettified) {
+        setPrompt(prettified);
+      }
+    } catch (err) {
+      console.error("Failed to prettify prompt:", err);
+    } finally {
+      setIsPrettifying(false);
+    }
+  };
+
   return (
     <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 pb-8">
       <motion.h1
@@ -91,6 +109,8 @@ export function PromptSection() {
           onAttachImage={handleAttachImage}
           attachedImagePreview={selectedImagePreview}
           onRemoveImage={handleRemoveImage}
+          onPrettify={handlePrettify}
+          isPrettifying={isPrettifying}
           placeholder="Ask Lovable to create an interface..."
         />
 

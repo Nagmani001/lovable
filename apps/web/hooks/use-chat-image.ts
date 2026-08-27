@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BASE_URL } from "@/lib/util";
+import { getBackendUrl } from "@/lib/util";
 
 export function useChatImage(
   projectId: string,
@@ -21,7 +21,7 @@ export function useChatImage(
     (async () => {
       try {
         const res = await fetch(
-          `${BASE_URL}/api/v1/chat/${projectId}/image?key=${encodeURIComponent(key)}`,
+          `${getBackendUrl()}/api/v1/chat/${projectId}/image?key=${encodeURIComponent(key)}`,
           { credentials: "include" },
         );
         if (!res.ok) return;

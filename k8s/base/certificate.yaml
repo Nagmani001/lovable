@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: lovable-tls
+  namespace: lovable
+spec:
+  secretName: lovable-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: lovable.nagmani.site
+  dnsNames:
+    - lovable.nagmani.site

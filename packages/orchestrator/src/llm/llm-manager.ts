@@ -4,6 +4,10 @@ import type { ChatCompletionMessageParam } from "../types/index.js";
 import { ContextManager } from "../context/context-manager.js";
 import { classifyIntent } from "../context/intent-classifier.js";
 import { runAgentLoop } from "../agent/loop.js";
+import {
+  callLLMWithRetry,
+  createLlmClientRotation,
+} from "../agent/llm-utils.js";
 
 interface LlmManagerConfig {
   openRouterApiKey: string;
@@ -28,6 +32,24 @@ interface HandleUserMessageParams {
   consoleLogs?: string[];
   networkRequests?: string[];
 }
+
+interface PrettifyPromptParams {
+  conversationHistory: ChatCompletionMessageParam[];
+  message: string;
+}
+
+const PRETTIFY_SYSTEM_PROMPT = `You are a prompt-enhancement assistant for an AI app builder. A user will share a raw prompt describing an app or interface they want to build, along with the surrounding conversation for context. Rewrite their latest prompt into a clear, detailed, well-structured version that keeps their original intent.
+
+Rules:
+- Stay faithful to the user's intent. Do not invent features or requirements they did not imply.
+- Be specific: capture the key features, structure, and visual expectations hinted at in the raw prompt.
+- Use clean, natural language; short paragraphs or bullet points are fine where they improve readability.
+- Do not mention "the prompt", "you", or any conversational framing.
+- Respond with ONLY the prettified prompt. No preamble, no explanations, no quotes, no markdown code fences.`;
+
+const MAX_PRETTIFY_HISTORY_MESSAGES = 10;
+
+const PRETTIFY_MODEL = "gemini-3-flash-preview";
 
 export class LlmManager {
   private openRouterApiKey: string;
@@ -115,5 +137,37 @@ export class LlmManager {
       params.conversationHistory.length,
     );
     return [...params.conversationHistory, ...newMessages];
+  }
+
+  async prettifyPrompt(params: PrettifyPromptParams): Promise<string> {
+    const rotation = createLlmClientRotation(this.openRouterApiKey);
+
+    const contextMessages = params.conversationHistory.slice(
+      -MAX_PRETTIFY_HISTORY_MESSAGES,
+    );
+
+    const messages: ChatCompletionMessageParam[] = [
+      { role: "system", content: PRETTIFY_SYSTEM_PROMPT },
+      ...contextMessages,
+      {
+        role: "user",
+        content: `Here is the prompt to prettify:\n\n${params.message}`,
+      },
+    ];
+
+    const response = await callLLMWithRetry(
+      rotation,
+      messages,
+      [],
+      "[prettify] ",
+      PRETTIFY_MODEL,
+    );
+
+    const prettified = response.choices[0]?.message?.content?.trim();
+    if (!prettified) {
+      return params.message;
+    }
+
+    return prettified;
   }
 }

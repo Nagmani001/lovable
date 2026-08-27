@@ -36,3 +36,9 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Secrets
+apps/backend/backend-secret.sh
+apps/backend/generate-backend-secret-cmd.sh
+apps/backend/backend-secret.yml
+apps/backend/generate-backend-secret.yml

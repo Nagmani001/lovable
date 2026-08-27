@@ -54,17 +54,20 @@ export function createLlmClientRotation(
 export async function callLLMWithRetry(
   rotation: LlmClientRotation,
   messages: ChatCompletionMessageParam[],
-  toolDefinitions: OpenAI.ChatCompletionTool[],
+  toolDefinitions?: OpenAI.ChatCompletionTool[],
   logPrefix = "",
+  model: string = MODEL,
 ): Promise<OpenAI.ChatCompletion> {
   let retryCount = 0;
   while (true) {
     try {
       const response = await rotation.client.chat.completions.create({
-        model: MODEL,
+        model,
         max_completion_tokens: MAX_COMPLETION_TOKENS,
         messages,
-        tools: toolDefinitions,
+        ...(toolDefinitions && toolDefinitions.length > 0
+          ? { tools: toolDefinitions }
+          : {}),
       });
       return response;
     } catch (err: any) {
