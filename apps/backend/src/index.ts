@@ -57,7 +57,7 @@ app.use("/api/v1/deploy", authMiddleware, deployRouter);
 export let server: Server;
 async function main() {
   initEmail();
-  await initRedis();
+  // await initRedis();
   initOrchestrator();
 
   server = app.listen(process.env.PORT, () => {

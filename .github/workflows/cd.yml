@@ -116,7 +116,7 @@
               cd /home/${{ secrets.SSH_USERNAME }}/lovable
 
               docker compose -f docker-compose-deploy.yml pull
-              docker compose -f docker-compose-deploy.yml run --rm backend sh -c "cd packages/database && npx prisma migrate deploy"
+              docker compose -f docker-compose-deploy.yml run --rm backend sh -c "cd packages/database && npx prisma@7.4.1 migrate deploy"
               docker compose -f docker-compose-deploy.yml up -d --no-deps backend
               docker compose -f docker-compose-deploy.yml up -d --no-deps web
 

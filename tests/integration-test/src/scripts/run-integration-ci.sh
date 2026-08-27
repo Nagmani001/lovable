@@ -24,10 +24,10 @@ echo '🟡 - Waiting for database to be ready...'
 $PROJECT_ROOT/tests/integration-test/src/scripts/wait-for-it.sh localhost:5433 -- echo "database has started"
 
 echo "Applying migration"
-cd $PROJECT_ROOT/packages/database && DATABASE_URL="postgresql://postgres:password@localhost:5433/postgres" pnpm dlx prisma migrate dev --name init --schema "$PROJECT_ROOT/packages/database/prisma/schema.prisma"
+cd $PROJECT_ROOT/packages/database && DATABASE_URL="postgresql://postgres:password@localhost:5433/postgres" pnpm dlx prisma@7.4.1 migrate dev --name init --schema "$PROJECT_ROOT/packages/database/prisma/schema.prisma"
 
 echo "Generate Client"
-cd $PROJECT_ROOT/packages/database && pnpm dlx prisma generate --schema "$PROJECT_ROOT/packages/database/prisma/schema.prisma"
+cd $PROJECT_ROOT/packages/database && pnpm dlx prisma@7.4.1 generate --schema "$PROJECT_ROOT/packages/database/prisma/schema.prisma"
 
 echo '🟡 - Starting backend server...'
 cd $PROJECT_ROOT/apps/backend && PORT=$PORT pnpm run dev:ci &
