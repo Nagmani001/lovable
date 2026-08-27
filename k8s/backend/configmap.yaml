@@ -5,7 +5,7 @@ metadata:
   namespace: lovable
 data:
   PORT: "5001"
-  BETTER_AUTH_URL: "https://lovable.nagmani.site"
+  BETTER_AUTH_URL: "https://api.lovable.nagmani.site"
   CORS_ORIGINS: "http://localhost:5000,https://lovable.nagmani.site"
   TRUSTED_ORIGINS: "http://localhost:5000,https://lovable.nagmani.site"
   OBJECT_STORE_PROVIDER: "gcs"

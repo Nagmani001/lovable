@@ -11,3 +11,17 @@ spec:
   commonName: lovable.nagmani.site
   dnsNames:
     - lovable.nagmani.site
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: backend-tls
+  namespace: lovable
+spec:
+  secretName: backend-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: api.lovable.nagmani.site
+  dnsNames:
+    - api.lovable.nagmani.site

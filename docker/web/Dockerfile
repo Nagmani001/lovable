@@ -21,7 +21,7 @@ RUN pnpm install
 
 COPY --from=prepare /app/out/full/ .
 
-ARG NEXT_PUBLIC_BASE_URL
+ARG NEXT_PUBLIC_BASE_URL=https://api.lovable.nagmani.site
 ENV NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL
 
 RUN pnpm build

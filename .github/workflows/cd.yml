@@ -85,8 +85,6 @@
             context: .
             file: docker/web/Dockerfile
             push: true
-            build-args: |
-              NEXT_PUBLIC_BASE_URL=${{ secrets.NEXT_PUBLIC_BASE_URL }}
             tags: |
               ${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
               ${{ env.IMAGE_PREFIX }}/web:latest

@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: lovable-ingress
+  name: backend-ingress
   namespace: lovable
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: 50m
@@ -10,16 +10,16 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - lovable.nagmani.site
-      secretName: lovable-tls
+        - api.lovable.nagmani.site
+      secretName: backend-tls
   rules:
-    - host: lovable.nagmani.site
+    - host: api.lovable.nagmani.site
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: web
+                name: backend
                 port:
-                  number: 5000
+                  number: 5001
