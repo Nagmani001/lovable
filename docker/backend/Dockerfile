@@ -20,7 +20,7 @@ RUN pnpm install
 
 COPY --from=prepare /app/out/full/ .
 # no build step since we will use tsx
-RUN cd packages/database && pnpm dlx prisma generate
+RUN cd packages/database && pnpm dlx prisma@7.4.1 generate
 
 FROM base AS runner
 WORKDIR /app
