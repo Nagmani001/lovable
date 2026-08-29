@@ -11,7 +11,7 @@ import { auth } from "./lib/auth";
 import { projectRouter } from "./router/projectRouter";
 import { authMiddleware } from "./middleware/authMiddleware";
 import { initOrchestrator, shutdownOrchestrator } from "./lib/orchestrator";
-import { initRedis, closeRedis } from "./lib/redis";
+// import { initRedis } from "./lib/redis";
 import { chatRouter } from "./router/chatRouter";
 import { sandboxRouter } from "./router/sandboxRouter";
 import { deployRouter } from "./router/deployRouter";
@@ -68,18 +68,15 @@ main();
 
 process.on("SIGINT", async () => {
   await shutdownOrchestrator();
-  await closeRedis();
   shutdown(0);
 });
 process.on("SIGTERM", async () => {
   await shutdownOrchestrator();
-  await closeRedis();
   shutdown(0);
 });
 
 process.on("uncaughtException", async (err) => {
   console.error("uncaught:", err);
   await shutdownOrchestrator();
-  await closeRedis();
   shutdown(1);
 });

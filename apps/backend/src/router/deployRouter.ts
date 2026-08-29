@@ -1,7 +1,9 @@
 import { Router, Response, Request } from "express";
 import { getParam } from "../lib/utils";
 import { prisma } from "@repo/database/client";
-import { sendAndAwait, getDeploymentStatus } from "../lib/queue";
+import { getQueueClient } from "../lib/redis";
+import { REDIS_QUEUE_NAME, WORKER_JOB_TYPES } from "@repo/common/data";
+import type { WorkerQueueItem } from "@repo/common/types";
 
 export const deployRouter: Router = Router();
 
@@ -16,10 +18,25 @@ deployRouter.post("/:projectId", async (req: Request, res: Response) => {
       res.status(404).json({ message: "Project not found" });
       return;
     }
-
     const deployId = crypto.randomUUID();
 
-    await sendAndAwait(deployId, res, projectId);
+    await prisma.project.update({
+      where: { id: projectId },
+      data: { deployIngStatus: "QUEUED" },
+    });
+
+    const item: WorkerQueueItem = {
+      type: WORKER_JOB_TYPES.DEPLOY,
+      payload: { projectId, deployId },
+    };
+    await getQueueClient().lPush(REDIS_QUEUE_NAME, JSON.stringify(item));
+
+    res.json({
+      message: "Deployment queued",
+      projectId,
+      deployId,
+      status: "QUEUED",
+    });
   } catch (err) {
     console.error("Deploy error:", err);
     if (!res.headersSent) {
@@ -43,13 +60,12 @@ deployRouter.get(
         return;
       }
 
-      const status = await getDeploymentStatus(deployId);
-      if (!status) {
-        res.status(404).json({ message: "Deployment not found" });
-        return;
-      }
-
-      res.json({ projectId, deployId, ...status });
+      res.json({
+        projectId,
+        deployId,
+        status: project.deployIngStatus,
+        deployedUrl: project.deployedUrl ?? undefined,
+      });
     } catch (err) {
       console.error("Deploy status error:", err);
       res.status(500).json({ message: "Failed to fetch deployment status" });

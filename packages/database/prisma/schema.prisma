@@ -78,19 +78,28 @@ model Verification {
 }
 
 model Project {
-  id                    String                @id @default(uuid())
+  id                    String                 @id @default(uuid())
   title                 String
   initialPrompt         String
-  status                ProjectStatus         @default(ACTIVE)
+  status                ProjectStatus          @default(ACTIVE)
+  deployIngStatus       ProjectDeployingStatus @default(NOTSTARTED)
   lastSavedAt           DateTime?
   deployedUrl           String?
   sandboxTemplateId     String?
   s3Prefix              String?
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
   conversationHistories ConversationHistory[]
   userId                String
-  user                  User                  @relation(fields: [userId], references: [id])
+  user                  User                   @relation(fields: [userId], references: [id])
+}
+
+enum ProjectDeployingStatus {
+  NOTSTARTED
+  QUEUED
+  PROCESSING
+  DEPLOYED
+  FAILED
 }
 
 enum ProjectStatus {
