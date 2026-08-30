@@ -39,7 +39,7 @@ app.use(express.json());
 
 app.get("/health", (req: Request, res: Response) => {
   res.json({
-    message: "backend is healthy",
+    message: "healthy",
   });
 });
 
