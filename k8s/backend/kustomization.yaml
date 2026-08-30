@@ -4,4 +4,3 @@ namespace: lovable
 resources:
   - configmap.yaml
   - deployment.yaml
-  - migrate-job.yaml

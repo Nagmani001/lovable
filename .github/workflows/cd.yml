@@ -1,130 +1,131 @@
-  name: CD
-
-  on:
-    push:
-      branches: [main]
-
-  env:
-    REGISTRY: ghcr.io  
-    IMAGE_PREFIX: ghcr.io/nagmani001/lovable
-
-  jobs:
-    changes:
-      runs-on: ubuntu-latest
-      outputs:
-        backend: ${{ steps.filter.outputs.backend }}
-        web: ${{ steps.filter.outputs.web }}
-      steps:
-        - uses: actions/checkout@v4
-        - uses: dorny/paths-filter@v3
-          id: filter
-          with:
-            filters: |
-              backend:
-                - 'apps/backend/**'
-                - 'packages/database/**'
-                - 'packages/common/**'
-                - 'packages/email/**'
-                - 'packages/orchestrator/**'
-                - 'packages/orchestrator-lg/**'
-                - 'docker/backend/**'
-              web:
-                - 'apps/web/**'
-                - 'packages/ui/**'
-                - 'packages/common/**'
-                - 'docker/web/**'
-
-    # Step 2: Build and push only what changed
-    build-backend:
-      needs: changes
-      if: needs.changes.outputs.backend == 'true'
-      runs-on: ubuntu-latest
-      permissions:
-       contents: read
-       packages: write
-      steps:
-        - uses: actions/checkout@v4
-
-        - name: Log in to GitHub Container Registry
-          uses: docker/login-action@v3
-          with:
-            registry: ghcr.io
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}  
-
-        - name: Build and push backend
-          uses: docker/build-push-action@v6
-          with:
-            context: .
-            file: docker/backend/Dockerfile
-            push: true
-            tags: |
-              ${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
-              ${{ env.IMAGE_PREFIX }}/backend:latest
-
-    build-web:
-      needs: changes
-      if: needs.changes.outputs.web == 'true'
-      runs-on: ubuntu-latest
-      permissions:
-       contents: read
-       packages: write
-      steps:
-        - uses: actions/checkout@v4
-
-        - name: Log in to GitHub Container Registry
-          uses: docker/login-action@v3
-          with:
-            registry: ghcr.io
-            username: ${{ github.actor }}
-            password: ${{ secrets.GITHUB_TOKEN }}
-
-        - name: Build and push web
-          uses: docker/build-push-action@v6
-          with:
-            context: .
-            file: docker/web/Dockerfile
-            push: true
-            tags: |
-              ${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
-              ${{ env.IMAGE_PREFIX }}/web:latest
-
-    deploy:
-      needs: [build-backend, build-web]
-      if: always() && !failure() && !cancelled()
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v4
-
-        - name: Copy compose file to VM
-          uses: appleboy/scp-action@v0.1.7
-          with:
-            host: ${{ secrets.SSH_HOST }}
-            username: ${{ secrets.SSH_USERNAME }}
-            key: ${{ secrets.SSH_KEY }}
-            source: docker/compose-files/docker-compose-deploy.yml
-            target: /home/${{ secrets.SSH_USERNAME }}/lovable/
-            strip_components: 2
-
-        - name: Deploy to VM
-          uses: appleboy/ssh-action@v1
-          with:
-            host: ${{ secrets.SSH_HOST }}
-            username: ${{ secrets.SSH_USERNAME }}
-            key: ${{ secrets.SSH_KEY }}
-            script: |
-              cd /home/${{ secrets.SSH_USERNAME }}/lovable
-
-              docker compose -f docker-compose-deploy.yml pull
-              docker compose -f docker-compose-deploy.yml run --rm backend sh -c "cd packages/database && npx prisma@7.4.1 migrate deploy"
-              docker compose -f docker-compose-deploy.yml up -d --no-deps backend
-              docker compose -f docker-compose-deploy.yml up -d --no-deps web
-
-              # wait for them in better way
-
-              sleep 10 
-              curl -f --retry 3 --retry-delay 2 http://localhost:5001/health || exit 1
-
-              curl -f --retry 3 --retry-delay 2 http://localhost:5000/api/health || exit 1
-              
-              docker image prune -f
+# DISABLED - full content preserved in cd-k8s.yml. New deploy logic lives there.
+#   name: CD
+# 
+#   on:
+#     push:
+#       branches: [main]
+# 
+#   env:
+#     REGISTRY: ghcr.io  
+#     IMAGE_PREFIX: ghcr.io/nagmani001/lovable
+# 
+#   jobs:
+#     changes:
+#       runs-on: ubuntu-latest
+#       outputs:
+#         backend: ${{ steps.filter.outputs.backend }}
+#         web: ${{ steps.filter.outputs.web }}
+#       steps:
+#         - uses: actions/checkout@v4
+#         - uses: dorny/paths-filter@v3
+#           id: filter
+#           with:
+#             filters: |
+#               backend:
+#                 - 'apps/backend/**'
+#                 - 'packages/database/**'
+#                 - 'packages/common/**'
+#                 - 'packages/email/**'
+#                 - 'packages/orchestrator/**'
+#                 - 'packages/orchestrator-lg/**'
+#                 - 'docker/backend/**'
+#               web:
+#                 - 'apps/web/**'
+#                 - 'packages/ui/**'
+#                 - 'packages/common/**'
+#                 - 'docker/web/**'
+# 
+#     # Step 2: Build and push only what changed
+#     build-backend:
+#       needs: changes
+#       if: needs.changes.outputs.backend == 'true'
+#       runs-on: ubuntu-latest
+#       permissions:
+#        contents: read
+#        packages: write
+#       steps:
+#         - uses: actions/checkout@v4
+# 
+#         - name: Log in to GitHub Container Registry
+#           uses: docker/login-action@v3
+#           with:
+#             registry: ghcr.io
+#             username: ${{ github.actor }}
+#             password: ${{ secrets.GITHUB_TOKEN }}  
+# 
+#         - name: Build and push backend
+#           uses: docker/build-push-action@v6
+#           with:
+#             context: .
+#             file: docker/backend/Dockerfile
+#             push: true
+#             tags: |
+#               ${{ env.IMAGE_PREFIX }}/backend:${{ github.sha }}
+#               ${{ env.IMAGE_PREFIX }}/backend:latest
+# 
+#     build-web:
+#       needs: changes
+#       if: needs.changes.outputs.web == 'true'
+#       runs-on: ubuntu-latest
+#       permissions:
+#        contents: read
+#        packages: write
+#       steps:
+#         - uses: actions/checkout@v4
+# 
+#         - name: Log in to GitHub Container Registry
+#           uses: docker/login-action@v3
+#           with:
+#             registry: ghcr.io
+#             username: ${{ github.actor }}
+#             password: ${{ secrets.GITHUB_TOKEN }}
+# 
+#         - name: Build and push web
+#           uses: docker/build-push-action@v6
+#           with:
+#             context: .
+#             file: docker/web/Dockerfile
+#             push: true
+#             tags: |
+#               ${{ env.IMAGE_PREFIX }}/web:${{ github.sha }}
+#               ${{ env.IMAGE_PREFIX }}/web:latest
+# 
+#     deploy:
+#       needs: [build-backend, build-web]
+#       if: always() && !failure() && !cancelled()
+#       runs-on: ubuntu-latest
+#       steps:
+#         - uses: actions/checkout@v4
+# 
+#         - name: Copy compose file to VM
+#           uses: appleboy/scp-action@v0.1.7
+#           with:
+#             host: ${{ secrets.SSH_HOST }}
+#             username: ${{ secrets.SSH_USERNAME }}
+#             key: ${{ secrets.SSH_KEY }}
+#             source: docker/compose-files/docker-compose-deploy.yml
+#             target: /home/${{ secrets.SSH_USERNAME }}/lovable/
+#             strip_components: 2
+# 
+#         - name: Deploy to VM
+#           uses: appleboy/ssh-action@v1
+#           with:
+#             host: ${{ secrets.SSH_HOST }}
+#             username: ${{ secrets.SSH_USERNAME }}
+#             key: ${{ secrets.SSH_KEY }}
+#             script: |
+#               cd /home/${{ secrets.SSH_USERNAME }}/lovable
+# 
+#               docker compose -f docker-compose-deploy.yml pull
+#               docker compose -f docker-compose-deploy.yml run --rm backend sh -c "cd packages/database && npx prisma@7.4.1 migrate deploy"
+#               docker compose -f docker-compose-deploy.yml up -d --no-deps backend
+#               docker compose -f docker-compose-deploy.yml up -d --no-deps web
+# 
+#               # wait for them in better way
+# 
+#               sleep 10 
+#               curl -f --retry 3 --retry-delay 2 http://localhost:5001/health || exit 1
+# 
+#               curl -f --retry 3 --retry-delay 2 http://localhost:5000/api/health || exit 1
+#               
+#               docker image prune -f
