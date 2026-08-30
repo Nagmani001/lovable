@@ -32,7 +32,7 @@ export function HeroSection() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border bg-secondary/50 text-xs text-muted-foreground mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse-glow" />
-            Now in public beta
+            Now in public beta Lovable
           </div>
         </motion.div>
 
