@@ -1,0 +1,27 @@
+{
+  "name": "worker",
+  "version": "1.0.0",
+  "description": "Background worker that consumes deploy jobs from the queue",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm dlx tsx src/index.ts",
+    "dev:ci": "pnpm dlx tsx src/index.ts"
+  },
+  "devDependencies": {
+    "@repo/database": "workspace:*",
+    "@repo/typescript-config": "workspace:*"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@repo/common": "workspace:*",
+    "@repo/orchestrator": "workspace:*",
+    "@repo/storage": "workspace:*",
+    "dotenv": "^17.4.2",
+    "e2b": "^2.13.0",
+    "google-auth-library": "^11.0.2",
+    "redis": "^5.0.0"
+  }
+}

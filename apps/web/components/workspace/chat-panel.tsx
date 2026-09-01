@@ -16,6 +16,7 @@ interface ChatPanelProps {
   onSendMessage: (content: string, image?: ChatImageAttachment) => void;
   isStreaming: boolean;
   isConnecting?: boolean;
+  isDeploying?: boolean;
   initialMessage?: string;
   initialImage?: UploadedImageKeys | null;
   agentStatus: string;
@@ -57,6 +58,7 @@ export function ChatPanel({
   onSendMessage,
   isStreaming,
   isConnecting = false,
+  isDeploying = false,
   initialMessage,
   initialImage,
   agentStatus,
@@ -179,7 +181,8 @@ export function ChatPanel({
 
   const handleSubmit = () => {
     const trimmed = input.trim();
-    if ((!trimmed && !attachment) || isStreaming || isConnecting) return;
+    if ((!trimmed && !attachment) || isStreaming || isConnecting || isDeploying)
+      return;
     onSendMessage(trimmed, attachment ?? undefined);
     setInput("");
     clearAttachment();
@@ -191,7 +194,8 @@ export function ChatPanel({
 
   const handlePrettify = async () => {
     const trimmed = input.trim();
-    if (!trimmed || isPrettifying || isStreaming || isConnecting) return;
+    if (!trimmed || isPrettifying || isStreaming || isConnecting || isDeploying)
+      return;
 
     setIsPrettifying(true);
     try {
@@ -425,7 +429,11 @@ export function ChatPanel({
           <button
             onClick={handlePrettify}
             disabled={
-              !input.trim() || isStreaming || isConnecting || isPrettifying
+              !input.trim() ||
+              isStreaming ||
+              isConnecting ||
+              isDeploying ||
+              isPrettifying
             }
             className="flex-shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-50 disabled:hover:text-muted-foreground disabled:hover:bg-transparent"
             title="Rewrite your prompt to be clearer and more detailed"
@@ -440,7 +448,10 @@ export function ChatPanel({
           <button
             onClick={handleSubmit}
             disabled={
-              (!input.trim() && !attachment) || isStreaming || isConnecting
+              (!input.trim() && !attachment) ||
+              isStreaming ||
+              isConnecting ||
+              isDeploying
             }
             className="flex-shrink-0 p-2 rounded-md bg-primary text-primary-foreground disabled:opacity-50 hover:bg-primary/90 transition-colors"
           >

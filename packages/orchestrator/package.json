@@ -15,6 +15,7 @@
     "./artifacts": "./src/storage/project-artifact-manager.ts",
     "./storage": "./src/storage/project-artifact-manager.ts",
     "./llm": "./src/llm/llm-manager.ts",
+    "./llm-utils": "./src/agent/llm-utils.ts",
     "./types": "./src/types/index.ts"
   },
   "devDependencies": {

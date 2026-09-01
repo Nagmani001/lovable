@@ -113,7 +113,7 @@ export async function prettifyPrompt(
   message: string,
 ): Promise<string> {
   const res = await axios.post(
-    `${getBackendUrl()}/api/v1/chat/${projectId}/prettify`,
+    `${getBackendUrl()}/api/v1/prettify/${projectId}`,
     { message },
     { withCredentials: true },
   );
@@ -122,7 +122,7 @@ export async function prettifyPrompt(
 
 export async function prettifyPromptHome(message: string): Promise<string> {
   const res = await axios.post(
-    `${getBackendUrl()}/api/v1/chat/prettify`,
+    `${getBackendUrl()}/api/v1/prettify`,
     { message },
     { withCredentials: true },
   );
@@ -227,5 +227,35 @@ export async function deployProject(projectId: string) {
     return res.data;
   } catch (err) {
     throw new Error("Deployment failed");
+  }
+}
+
+export async function getDeployStatus(
+  projectId: string,
+  deployId: string,
+): Promise<{
+  status: string;
+  deployedUrl?: string;
+}> {
+  const res = await axios.get(
+    `${getBackendUrl()}/api/v1/deploy/${projectId}/${deployId}`,
+    {
+      withCredentials: true,
+    },
+  );
+  return res.data;
+}
+
+export async function pollDeployStatus(
+  projectId: string,
+  deployId: string,
+  intervalMs = 2_000,
+): Promise<{ status: string; deployedUrl?: string }> {
+  for (;;) {
+    const status = await getDeployStatus(projectId, deployId);
+    if (status.status === "DEPLOYED" || status.status === "FAILED") {
+      return status;
+    }
+    await new Promise((r) => setTimeout(r, intervalMs));
   }
 }

@@ -1,9 +1,13 @@
+import { config } from "dotenv";
+const __dirname = dirname(fileURLToPath(import.meta.url));
+config({
+  path: `${path.join(__dirname, "..")}/.env`,
+});
 import express, { Request, Response } from "express";
 import { toNodeHandler } from "better-auth/node";
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 import path from "path";
-import { config } from "dotenv";
 import cors from "cors";
 import { shutdown } from "./lib/utils";
 import { initEmail } from "./lib/email";
@@ -11,18 +15,14 @@ import { auth } from "./lib/auth";
 import { projectRouter } from "./router/projectRouter";
 import { authMiddleware } from "./middleware/authMiddleware";
 import { initOrchestrator, shutdownOrchestrator } from "./lib/orchestrator";
-// import { initRedis } from "./lib/redis";
+import { initRedis } from "./lib/redis";
 import { chatRouter } from "./router/chatRouter";
+import { preetifyChatRouter } from "./router/preetifyChatRouter";
 import { sandboxRouter } from "./router/sandboxRouter";
 import { deployRouter } from "./router/deployRouter";
 import { Server } from "http";
 
 const app = express();
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-config({
-  path: `${path.join(__dirname, "..")}/.env`,
-});
 
 app.use(
   cors({
@@ -51,13 +51,14 @@ app.get("/error", (req: Request, res: Response) => {
 
 app.use("/api/v1/project", authMiddleware, projectRouter);
 app.use("/api/v1/chat", authMiddleware, chatRouter);
+app.use("/api/v1/prettify", authMiddleware, preetifyChatRouter);
 app.use("/api/v1/sandbox", authMiddleware, sandboxRouter);
 app.use("/api/v1/deploy", authMiddleware, deployRouter);
 
 export let server: Server;
 async function main() {
   initEmail();
-  // await initRedis();
+  await initRedis();
   initOrchestrator();
 
   server = app.listen(process.env.PORT, () => {

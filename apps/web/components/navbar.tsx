@@ -21,9 +21,11 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
 import { authClient } from "@/lib/auth";
-import { deployProject } from "@/lib/api";
+import { deployProject, pollDeployStatus } from "@/lib/api";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { useAtom, useAtomValue } from "jotai";
+import { isAgentBusyAtom, isDeployingAtom } from "@/atom";
 
 export function Navbar() {
   const { setTheme, resolvedTheme } = useTheme();
@@ -44,9 +46,10 @@ export function Navbar() {
     .toUpperCase();
 
   const router = useRouter();
-  const [isDeploying, setIsDeploying] = useState(false);
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
   const [failedImageSrc, setFailedImageSrc] = useState<string | null>(null);
+  const isAgentBusy = useAtomValue(isAgentBusyAtom);
+  const [isDeploying, setIsDeploying] = useAtom(isDeployingAtom);
 
   const projectId = useMemo(() => {
     if (!pathname || !pathname.startsWith("/project/")) return null;
@@ -59,7 +62,13 @@ export function Navbar() {
     try {
       setIsDeploying(true);
       const result = await deployProject(projectId);
-      setDeployedUrl(result.deployedUrl);
+
+      if (result.status === "QUEUED" && result.deployId) {
+        const final = await pollDeployStatus(projectId, result.deployId);
+        setDeployedUrl(final.deployedUrl ?? null);
+      } else {
+        setDeployedUrl(result.deployedUrl ?? null);
+      }
     } catch (err) {
       console.error("Deploy failed:", err);
     } finally {
@@ -149,7 +158,7 @@ export function Navbar() {
             ) : null}
             <button
               onClick={handleDeploy}
-              disabled={isDeploying}
+              disabled={isDeploying || isAgentBusy}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors"
             >
               {isDeploying ? (

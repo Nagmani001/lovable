@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import { connectToProject, getProjectHistory } from "@/lib/api";
-import { useChat } from "@/hooks/use-chat";
+import { useChat, ChatImageAttachment } from "@/hooks/use-chat";
 import { useHeartbeat } from "@/hooks/use-heartbeat";
 import { ChatPanel } from "@/components/workspace/chat-panel";
 import { WorkspacePanel } from "@/components/workspace/workspace-panel";
 import type { UploadedImageKeys } from "@/lib/chat-image";
+import { useAtom, useAtomValue } from "jotai";
+import { isAgentBusyAtom, isDeployingAtom } from "@/atom";
 
 export default function ProjectWorkspacePage({
   params,
@@ -32,6 +34,21 @@ export default function ProjectWorkspacePage({
 
   const { messages, sendMessage, isStreaming, agentStatus, loadHistory } =
     useChat(project);
+
+  const [isDeploying, setIsDeploying] = useAtom(isDeployingAtom);
+  const [, setAgentBusy] = useAtom(isAgentBusyAtom);
+
+  // The deploy button is only enabled once the agent is idle.
+  useEffect(() => {
+    setAgentBusy(isStreaming || isConnecting);
+  }, [isStreaming, isConnecting, setAgentBusy]);
+
+  useEffect(() => {
+    return () => {
+      setAgentBusy(false);
+      setIsDeploying(false);
+    };
+  }, [setAgentBusy, setIsDeploying]);
 
   useHeartbeat(previewUrl ? project : null);
 
@@ -93,6 +110,15 @@ export default function ProjectWorkspacePage({
     connect();
   }, [project, loadHistory]);
 
+  // Prompting is blocked while a deployment is running.
+  const handleSendMessage = (
+    content: string,
+    attachment?: ChatImageAttachment,
+  ) => {
+    if (isDeploying) return;
+    sendMessage(content, attachment);
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] min-h-0 bg-background">
       <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -100,9 +126,10 @@ export default function ProjectWorkspacePage({
           <ChatPanel
             projectId={project}
             messages={messages}
-            onSendMessage={sendMessage}
+            onSendMessage={handleSendMessage}
             isStreaming={isStreaming}
             isConnecting={isConnecting}
+            isDeploying={isDeploying}
             initialMessage={isConnecting || hasHistory ? undefined : prompt}
             initialImage={isConnecting || hasHistory ? null : initialImage}
             agentStatus={agentStatus}

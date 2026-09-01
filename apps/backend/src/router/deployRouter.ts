@@ -2,6 +2,7 @@ import { Router, Response, Request } from "express";
 import { getParam } from "../lib/utils";
 import { prisma } from "@repo/database/client";
 import { getQueueClient } from "../lib/redis";
+import { getOrchestrator } from "../lib/orchestrator";
 import { REDIS_QUEUE_NAME, WORKER_JOB_TYPES } from "@repo/common/data";
 import type { WorkerQueueItem } from "@repo/common/types";
 
@@ -18,6 +19,41 @@ deployRouter.post("/:projectId", async (req: Request, res: Response) => {
       res.status(404).json({ message: "Project not found" });
       return;
     }
+
+    // A deployment is already running — tell the client to keep polling.
+    if (
+      project.deployIngStatus === "QUEUED" ||
+      project.deployIngStatus === "PROCESSING"
+    ) {
+      res.json({
+        message: "Deployment already in progress",
+        projectId,
+        status: project.deployIngStatus === "QUEUED" ? "QUEUED" : "PROCESSING",
+        deployedUrl: project.deployedUrl ?? undefined,
+      });
+      return;
+    }
+
+    // If there have been no new messages since the last build, the project is
+    // already up to date — nothing to deploy.
+    const lastBuiltAt = project.lastBuiltAt;
+    const newConversations = await prisma.conversationHistory.count({
+      where: {
+        projectId,
+        ...(lastBuiltAt ? { createdAT: { gt: lastBuiltAt } } : {}),
+      },
+    });
+
+    if (lastBuiltAt && newConversations === 0) {
+      res.json({
+        message: "Project is already up to date",
+        projectId,
+        status: "DEPLOYED",
+        deployedUrl: project.deployedUrl ?? undefined,
+      });
+      return;
+    }
+
     const deployId = crypto.randomUUID();
 
     await prisma.project.update({
@@ -25,9 +61,11 @@ deployRouter.post("/:projectId", async (req: Request, res: Response) => {
       data: { deployIngStatus: "QUEUED" },
     });
 
+    const sandboxId = getOrchestrator().getSandboxId(projectId);
+
     const item: WorkerQueueItem = {
       type: WORKER_JOB_TYPES.DEPLOY,
-      payload: { projectId, deployId },
+      payload: { projectId, deployId, sandboxId },
     };
     await getQueueClient().lPush(REDIS_QUEUE_NAME, JSON.stringify(item));
 

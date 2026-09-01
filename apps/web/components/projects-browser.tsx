@@ -15,7 +15,7 @@ const tabs = [
 
 interface Project {
   id: string;
-  title: string;
+  title: string | null;
   status: string;
   createdAt: string;
 }
@@ -101,9 +101,9 @@ export function ProjectsBrowser() {
                 transition={{ delay: 0.2 + i * 0.08 }}
               >
                 <ProjectCard
-                  name={project.title}
+                  name={project.title ?? "Untitled project"}
                   date={formatDate(project.createdAt)}
-                  emoji={emojiForProject(project.title)}
+                  emoji={emojiForProject(project.title ?? "")}
                   onClick={() => router.push(`/project/${project.id}`)}
                 />
               </motion.div>

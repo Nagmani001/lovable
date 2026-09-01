@@ -53,6 +53,9 @@ export class Orchestrator {
     message: string;
     conversationHistory: ChatCompletionMessageParam[];
     onStream: (chunk: StreamChunk) => void;
+    onComplete?: (
+      messages: ChatCompletionMessageParam[],
+    ) => void | Promise<void>;
     consoleLogs?: string[];
     networkRequests?: string[];
   }): Promise<ChatCompletionMessageParam[]> {
@@ -72,6 +75,7 @@ export class Orchestrator {
       conversationHistory: params.conversationHistory,
       sandbox: entry.sandbox,
       onStream: params.onStream,
+      onComplete: params.onComplete,
       consoleLogs: params.consoleLogs,
       networkRequests: params.networkRequests,
     });
@@ -93,6 +97,10 @@ export class Orchestrator {
 
   async persistProject(projectId: string): Promise<void> {
     await this.sandboxManager.persistAndScheduleShutdown(projectId);
+  }
+
+  getSandboxId(projectId: string): string | undefined {
+    return this.sandboxManager.getSandbox(projectId)?.sandbox.sandboxId;
   }
 
   async deployProject(projectId: string): Promise<string> {

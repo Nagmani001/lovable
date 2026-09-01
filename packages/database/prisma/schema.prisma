@@ -79,10 +79,12 @@ model Verification {
 
 model Project {
   id                    String                 @id @default(uuid())
-  title                 String
+  title                 String?
   initialPrompt         String
+  deployPrefix          String?                @unique
   status                ProjectStatus          @default(ACTIVE)
   deployIngStatus       ProjectDeployingStatus @default(NOTSTARTED)
+  lastBuiltAt           DateTime?
   lastSavedAt           DateTime?
   deployedUrl           String?
   sandboxTemplateId     String?

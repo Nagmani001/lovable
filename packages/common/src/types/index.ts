@@ -69,7 +69,8 @@ export interface CreateProjectResponse {
 
 export interface ProjectDetails {
   id: string;
-  title: string;
+  title: string | null;
+  deployPrefix: string | null;
   initialPrompt: string;
   status: string;
   deployedUrl: string | null;

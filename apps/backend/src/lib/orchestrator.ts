@@ -1,6 +1,6 @@
 import { Orchestrator } from "@repo/orchestrator/orchestrator";
 import type { OrchestratorConfig } from "@repo/orchestrator/types";
-import { buildObjectStoreConfig } from "./storage";
+import { buildObjectStoreConfigFromEnv } from "@repo/storage";
 
 let orchestrator: Orchestrator | null = null;
 
@@ -10,7 +10,7 @@ export function initOrchestrator(): Orchestrator {
   const config: OrchestratorConfig = {
     e2bApiKey: process.env.E2B_API_KEY || "",
     openRouterApiKey: process.env.OPENROUTER_API_KEY || "",
-    objectStore: buildObjectStoreConfig(),
+    objectStore: buildObjectStoreConfigFromEnv(),
     sandboxTemplate: process.env.E2B_TEMPLATE || "base",
     sandboxTimeoutMs: 60 * 60 * 1000, // 60 minutes
     heartbeatTimeoutMs: 2 * 60 * 1000, // 5 minutes without heartbeat → shutdown

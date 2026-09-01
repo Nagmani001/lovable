@@ -3,6 +3,9 @@ import { Router, Request, Response } from "express";
 import { getOrchestrator } from "../lib/orchestrator";
 import { getParam } from "../lib/utils";
 import { createProjectSchema } from "@repo/common/zod";
+import { getQueueClient } from "../lib/redis";
+import { REDIS_QUEUE_NAME, WORKER_JOB_TYPES } from "@repo/common/data";
+import type { WorkerQueueItem } from "@repo/common/types";
 
 export const projectRouter: Router = Router();
 
@@ -22,7 +25,6 @@ projectRouter.post("/create", async (req: Request, res: Response) => {
 
     const project = await prisma.project.create({
       data: {
-        title: prompt.substring(0, 100),
         initialPrompt: prompt,
         userId,
       },
@@ -31,7 +33,13 @@ projectRouter.post("/create", async (req: Request, res: Response) => {
     const orchestrator = getOrchestrator();
     const sandbox = await orchestrator.createSandbox(project.id);
 
-    // this does not start the request to llm , logic for that is present in /project/:projectId routing
+    // The title is generated asynchronously by the worker, which also derives
+    // the deployPrefix and registers the host rule in the url map.
+    const item: WorkerQueueItem = {
+      type: WORKER_JOB_TYPES.GENERATE_TITLE,
+      payload: { projectId: project.id, initialPrompt: prompt },
+    };
+    await getQueueClient().lPush(REDIS_QUEUE_NAME, JSON.stringify(item));
 
     res.json({
       projectId: project.id,
@@ -58,6 +66,7 @@ projectRouter.get("/list", async (req: Request, res: Response) => {
       select: {
         id: true,
         title: true,
+        deployPrefix: true,
         initialPrompt: true,
         status: true,
         deployedUrl: true,

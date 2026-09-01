@@ -29,6 +29,7 @@ interface HandleUserMessageParams {
   conversationHistory: ChatCompletionMessageParam[];
   sandbox: Sandbox;
   onStream: (chunk: StreamChunk) => void;
+  onComplete?: (messages: ChatCompletionMessageParam[]) => void | Promise<void>;
   consoleLogs?: string[];
   networkRequests?: string[];
 }
@@ -85,8 +86,9 @@ export class LlmManager {
       this.contextManagers.set(params.projectId, contextManager);
     }
 
-    // The router saves the current user message before this method is called.
-    // First turn is detected by the absence of any assistant message in history.
+    // The router passes the current user message as the last message in the
+    // conversation history. First turn is detected by the absence of any
+    // assistant message in history.
     const isFirstTurn = !params.conversationHistory.some(
       (m) => m.role === "assistant",
     );
@@ -136,7 +138,11 @@ export class LlmManager {
     const newMessages = updatedMessages.slice(
       params.conversationHistory.length,
     );
-    return [...params.conversationHistory, ...newMessages];
+    const result = [...params.conversationHistory, ...newMessages];
+
+    await params.onComplete?.(result);
+
+    return result;
   }
 
   async prettifyPrompt(params: PrettifyPromptParams): Promise<string> {

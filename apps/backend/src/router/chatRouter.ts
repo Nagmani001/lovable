@@ -1,36 +1,14 @@
 import { Router, Request, Response } from "express";
 import { randomUUID } from "crypto";
 import type { ChatCompletionMessageParam } from "@repo/orchestrator/types";
-import { getParam } from "../lib/utils";
+import { enqueueConversation, getParam } from "../lib/utils";
 import { prisma } from "@repo/database/client";
 import { chatMessageSchema } from "@repo/common/zod";
-import { StreamChunk } from "@repo/common/types";
+import { StreamChunk, ConversationMessageInput } from "@repo/common/types";
 import { getOrchestrator } from "../lib/orchestrator";
 import { getObjectStore } from "../lib/storage";
 
 export const chatRouter: Router = Router();
-
-chatRouter.post("/prettify", async (req: Request, res: Response) => {
-  try {
-    const { message = "" } = req.body as { message?: string };
-
-    if (!message.trim()) {
-      res.status(400).json({ message: "Message is required" });
-      return;
-    }
-
-    const orchestrator = getOrchestrator();
-    const prettifiedPrompt = await orchestrator.prettifyPrompt({
-      message,
-      conversationHistory: [],
-    });
-
-    res.json({ prettifiedPrompt });
-  } catch (err) {
-    console.error("Prettify error:", err);
-    res.status(500).json({ message: "Failed to prettify prompt" });
-  }
-});
 
 function contentTypeToExt(contentType: string): string {
   switch (contentType) {
@@ -139,15 +117,16 @@ chatRouter.post("/:projectId/upload", async (req: Request, res: Response) => {
 });
 
 chatRouter.post("/:projectId", async (req: Request, res: Response) => {
+  const projectId = getParam(req, "projectId");
+  const parsed = chatMessageSchema.safeParse(req.body);
+
   try {
-    const parsed = chatMessageSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({ message: "Invalid message" });
       return;
     }
 
     const { message = "", imageKey, thumbnailKey } = parsed.data;
-    const projectId = getParam(req, "projectId");
 
     const project = await prisma.project.findFirst({
       where: { id: projectId, userId: req.userId },
@@ -164,25 +143,32 @@ chatRouter.post("/:projectId", async (req: Request, res: Response) => {
     res.setHeader("X-Accel-Buffering", "no");
     res.flushHeaders();
 
-    await prisma.conversationHistory.create({
-      data: {
-        projectId,
-        contents: message,
-        hidden: false,
-        from: "USER",
-        type: "TEXT_MESSAGE",
-        imageKey: imageKey ?? null,
-        thumbnailKey: thumbnailKey ?? null,
-      },
-    });
-
     const history = await prisma.conversationHistory.findMany({
       where: { projectId },
       orderBy: { createdAT: "asc" },
     });
 
     const store = getObjectStore();
-    const llmMessages = await buildLlmMessages(history, store);
+    const historyMessages = await buildLlmMessages(history, store);
+
+    const currentUserMessage: ChatCompletionMessageParam = imageKey
+      ? {
+          role: "user",
+          content: [
+            { type: "text", text: message },
+            {
+              type: "image_url",
+              image_url: {
+                url: await store.getSignedGetUrl(imageKey, {
+                  expiresInSeconds: 15 * 60,
+                }),
+              },
+            },
+          ],
+        }
+      : { role: "user", content: message };
+
+    const llmMessages = [...historyMessages, currentUserMessage];
 
     const onStream = (chunk: StreamChunk) => {
       res.write(`event: ${chunk.type}\n`);
@@ -190,40 +176,82 @@ chatRouter.post("/:projectId", async (req: Request, res: Response) => {
     };
 
     const orchestrator = getOrchestrator();
-    const updatedMessages = await orchestrator.handleUserMessage({
+    await orchestrator.handleUserMessage({
       projectId,
       message,
       conversationHistory: llmMessages,
       onStream,
-    });
+      onComplete: async (finalMessages) => {
+        const lastAssistantMsg = finalMessages
+          .filter((m) => m.role === "assistant")
+          .pop();
 
-    const lastAssistantMsg = updatedMessages
-      .filter((m) => m.role === "assistant")
-      .pop();
+        const textContent =
+          lastAssistantMsg && typeof lastAssistantMsg.content === "string"
+            ? lastAssistantMsg.content
+            : "";
 
-    if (lastAssistantMsg) {
-      const textContent =
-        typeof lastAssistantMsg.content === "string"
-          ? lastAssistantMsg.content
-          : "";
-
-      if (textContent) {
-        await prisma.conversationHistory.create({
-          data: {
-            projectId,
-            contents: textContent,
+        const conversationMessages: ConversationMessageInput[] = [
+          {
+            contents: message,
+            from: "USER",
+            type: "TEXT_MESSAGE",
             hidden: false,
+            imageKey: imageKey ?? null,
+            thumbnailKey: thumbnailKey ?? null,
+          },
+        ];
+
+        if (textContent) {
+          conversationMessages.push({
+            contents: textContent,
             from: "ASSISTANT",
             type: "TEXT_MESSAGE",
-          },
+            hidden: false,
+            imageKey: null,
+            thumbnailKey: null,
+          });
+        }
+
+        try {
+          await enqueueConversation(projectId, conversationMessages);
+        } catch (enqueueErr) {
+          console.error("Failed to enqueue conversation persist:", enqueueErr);
+        }
+      },
+    });
+
+    // The live sandbox lives in this process, so persist its files to the
+    // bucket here in the background, right after the final LLM response.
+    orchestrator
+      .persistProject(projectId)
+      .then(async () => {
+        await prisma.project.update({
+          where: { id: projectId },
+          data: { lastSavedAt: new Date() },
         });
-      }
-    }
+      })
+      .catch((err) => console.error("Background persist error:", err));
 
     res.write(`event: done\ndata: {}\n\n`);
     res.end();
   } catch (err) {
     console.error("Chat error:", err);
+
+    try {
+      if (parsed.success) {
+        await enqueueConversation(projectId, [
+          {
+            contents: parsed.data.message ?? "",
+            from: "USER",
+            type: "TEXT_MESSAGE",
+            hidden: false,
+            imageKey: parsed.data.imageKey ?? null,
+            thumbnailKey: parsed.data.thumbnailKey ?? null,
+          },
+        ]);
+      }
+    } catch {}
 
     if (res.headersSent) {
       res.write(
@@ -233,45 +261,6 @@ chatRouter.post("/:projectId", async (req: Request, res: Response) => {
     } else {
       res.status(500).json({ message: "Chat failed" });
     }
-  }
-});
-
-chatRouter.post("/:projectId/prettify", async (req: Request, res: Response) => {
-  try {
-    const { message = "" } = req.body as { message?: string };
-    const projectId = getParam(req, "projectId");
-
-    if (!message.trim()) {
-      res.status(400).json({ message: "Message is required" });
-      return;
-    }
-
-    const project = await prisma.project.findFirst({
-      where: { id: projectId, userId: req.userId },
-    });
-    if (!project) {
-      res.status(404).json({ message: "Project not found" });
-      return;
-    }
-
-    const history = await prisma.conversationHistory.findMany({
-      where: { projectId },
-      orderBy: { createdAT: "asc" },
-    });
-
-    const store = getObjectStore();
-    const llmMessages = await buildLlmMessages(history, store);
-
-    const orchestrator = getOrchestrator();
-    const prettifiedPrompt = await orchestrator.prettifyPrompt({
-      message,
-      conversationHistory: llmMessages,
-    });
-
-    res.json({ prettifiedPrompt });
-  } catch (err) {
-    console.error("Prettify error:", err);
-    res.status(500).json({ message: "Failed to prettify prompt" });
   }
 });
 
