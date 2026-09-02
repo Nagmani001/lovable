@@ -34,3 +34,15 @@ export const enqueueConversation = async (
   };
   await getQueueClient().lPush(REDIS_QUEUE_NAME, JSON.stringify(item));
 };
+
+export const enqueueThumbnail = async (payload: {
+  projectId: string;
+  userId: string;
+  sandboxId: string;
+}) => {
+  const item: WorkerQueueItem = {
+    type: WORKER_JOB_TYPES.GENERATE_THUMBNAIL,
+    payload,
+  };
+  await getQueueClient().lPush(REDIS_QUEUE_NAME, JSON.stringify(item));
+};

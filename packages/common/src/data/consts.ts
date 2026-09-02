@@ -10,6 +10,7 @@ export const WORKER_JOB_TYPES = {
   DEPLOY: "deploy",
   PERSIST_PROJECT: "persist-project",
   GENERATE_TITLE: "generate-title",
+  GENERATE_THUMBNAIL: "generate-thumbnail",
 } as const;
 
 export const APP_DOMAIN = "app.lovable.nagmani.site";

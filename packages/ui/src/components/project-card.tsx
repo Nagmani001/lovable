@@ -6,7 +6,8 @@ import { cn } from "@repo/ui/lib/utils";
 interface ProjectCardProps {
   name: string;
   date: string;
-  emoji: string;
+  initial: string;
+  imageUrl?: string;
   onClick?: () => void;
   className?: string;
 }
@@ -14,7 +15,8 @@ interface ProjectCardProps {
 function ProjectCard({
   name,
   date,
-  emoji,
+  initial,
+  imageUrl,
   onClick,
   className,
 }: ProjectCardProps) {
@@ -26,9 +28,18 @@ function ProjectCard({
         className,
       )}
     >
-      <div className="w-full h-28 rounded-lg bg-secondary mb-3 flex items-center justify-center text-3xl">
-        {emoji}
-      </div>
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt={name}
+          className="w-full h-28 rounded-lg object-cover bg-secondary mb-3"
+        />
+      ) : (
+        <div className="w-full h-28 rounded-lg bg-secondary mb-3 flex items-center justify-center text-3xl font-semibold text-foreground">
+          {initial}
+        </div>
+      )}
       <h3 className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
         {name}
       </h3>

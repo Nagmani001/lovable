@@ -6,6 +6,12 @@ export const template = Template()
   .runCmd("npm install -g bun@1.2.15")
   .runCmd("npm install -g pm2")
   .runCmd(
+    "apt-get update -qq && " +
+      "(apt-get install -y -qq --no-install-recommends chromium-browser || " +
+      "apt-get install -y -qq --no-install-recommends chromium) && " +
+      "apt-get clean && rm -rf /var/lib/apt/lists/*",
+  )
+  .runCmd(
     "OPENVSCODE_TAG=$(curl -s https://api.github.com/repos/gitpod-io/openvscode-server/releases/latest | grep tag_name | cut -d'\"'  -f4) && " +
       'curl -fsSL "https://github.com/gitpod-io/openvscode-server/releases/download/${OPENVSCODE_TAG}/${OPENVSCODE_TAG}-linux-x64.tar.gz" -o /tmp/openvscode.tar.gz && ' +
       "mkdir -p /home/user/openvscode-server && " +

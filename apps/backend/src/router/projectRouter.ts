@@ -70,6 +70,7 @@ projectRouter.get("/list", async (req: Request, res: Response) => {
         initialPrompt: true,
         status: true,
         deployedUrl: true,
+        thumbnailKey: true,
         lastSavedAt: true,
         createdAt: true,
         updatedAt: true,

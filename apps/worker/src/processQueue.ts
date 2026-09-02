@@ -4,6 +4,7 @@ import { prisma } from "@repo/database/client";
 import { persistProject } from "./workers/persistConversation";
 import { deploy } from "./workers/deploy";
 import { generateProjectTitle } from "./workers/generateTitle";
+import { generateThumbnail } from "./workers/generateThumbnail";
 
 export async function processQueueItem(item: WorkerQueueItem): Promise<string> {
   switch (item.type) {
@@ -37,6 +38,8 @@ export async function processQueueItem(item: WorkerQueueItem): Promise<string> {
       return persistProject(item.payload);
     case WORKER_JOB_TYPES.GENERATE_TITLE:
       return generateProjectTitle(item.payload);
+    case WORKER_JOB_TYPES.GENERATE_THUMBNAIL:
+      return generateThumbnail(item.payload);
     default:
       throw new Error(
         `Unknown worker job type: ${JSON.stringify((item as WorkerQueueItem).type)}`,

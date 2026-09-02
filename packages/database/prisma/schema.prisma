@@ -89,6 +89,7 @@ model Project {
   deployedUrl           String?
   sandboxTemplateId     String?
   s3Prefix              String?
+  thumbnailKey          String?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   conversationHistories ConversationHistory[]

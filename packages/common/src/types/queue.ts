@@ -2,6 +2,7 @@ export const WORKER_JOB_TYPES = {
   DEPLOY: "deploy",
   PERSIST_PROJECT: "persist-project",
   GENERATE_TITLE: "generate-title",
+  GENERATE_THUMBNAIL: "generate-thumbnail",
 } as const;
 
 export type WorkerJobType =
@@ -32,10 +33,17 @@ export interface GenerateTitleJobPayload {
   initialPrompt: string;
 }
 
+export interface GenerateThumbnailJobPayload {
+  projectId: string;
+  userId: string;
+  sandboxId: string;
+}
+
 export interface WorkerJobPayloads {
   deploy: DeployJobPayload;
   "persist-project": PersistProjectJobPayload;
   "generate-title": GenerateTitleJobPayload;
+  "generate-thumbnail": GenerateThumbnailJobPayload;
 }
 
 export type WorkerQueueItem<T extends WorkerJobType = WorkerJobType> =

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { randomUUID } from "crypto";
 import type { ChatCompletionMessageParam } from "@repo/orchestrator/types";
-import { enqueueConversation, getParam } from "../lib/utils";
+import { enqueueConversation, enqueueThumbnail, getParam } from "../lib/utils";
 import { prisma } from "@repo/database/client";
 import { chatMessageSchema } from "@repo/common/zod";
 import { StreamChunk, ConversationMessageInput } from "@repo/common/types";
@@ -218,6 +218,19 @@ chatRouter.post("/:projectId", async (req: Request, res: Response) => {
         } catch (enqueueErr) {
           console.error("Failed to enqueue conversation persist:", enqueueErr);
         }
+
+        const sandboxId = getOrchestrator().getSandboxId(projectId);
+        if (sandboxId) {
+          try {
+            await enqueueThumbnail({
+              projectId,
+              userId: req.userId!,
+              sandboxId,
+            });
+          } catch (thumbErr) {
+            console.error("Failed to enqueue thumbnail generation:", thumbErr);
+          }
+        }
       },
     });
 
@@ -282,7 +295,10 @@ chatRouter.get("/:projectId/image", async (req: Request, res: Response) => {
       return;
     }
 
-    if (!key.startsWith(`attachments/${projectId}/`)) {
+    if (
+      !key.startsWith(`attachments/${projectId}/`) &&
+      !key.startsWith(`thumbnails/${projectId}.`)
+    ) {
       res.status(403).json({ message: "Forbidden" });
       return;
     }
