@@ -246,6 +246,20 @@ export async function getDeployStatus(
   return res.data;
 }
 
+export async function checkDeployStatus(projectId: string): Promise<{
+  inProgress: boolean;
+  needsRedeploy: boolean;
+  deployedUrl?: string;
+}> {
+  const res = await axios.get(
+    `${getBackendUrl()}/api/v1/deploy/${projectId}/check`,
+    {
+      withCredentials: true,
+    },
+  );
+  return res.data;
+}
+
 export async function pollDeployStatus(
   projectId: string,
   deployId: string,

@@ -4,3 +4,11 @@ export function getBackendUrl() {
   }
   return process.env.NEXT_PUBLIC_BASE_URL;
 }
+
+export function getAppDomain(): string {
+  return process.env.NEXT_PUBLIC_APP_DOMAIN || "app.lovable.nagmani.site";
+}
+
+export function getDeployUrl(prefix: string): string {
+  return `https://${prefix}.${getAppDomain()}`;
+}

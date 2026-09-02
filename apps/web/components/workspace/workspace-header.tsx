@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowLeft, Rocket, Loader2, Github, Database } from "lucide-react";
+import { ArrowLeft, Loader2, Github, Database } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { deployProject } from "@/lib/api";
+import { DeployPopover } from "./deploy-popover";
 import type { ToolCallInfo } from "@/hooks/use-chat";
 
 interface WorkspaceHeaderProps {
@@ -17,20 +17,8 @@ export function WorkspaceHeader({
   agentStatus,
   activeToolCalls,
 }: WorkspaceHeaderProps) {
-  const [isDeploying, setIsDeploying] = useState(false);
+  const [, setIsDeploying] = useState(false);
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
-
-  const handleDeploy = async () => {
-    try {
-      setIsDeploying(true);
-      const result = await deployProject(projectId);
-      setDeployedUrl(result.deployedUrl);
-    } catch (err) {
-      console.error("Deploy failed:", err);
-    } finally {
-      setIsDeploying(false);
-    }
-  };
 
   return (
     <header className="h-12 border-b border-border bg-background flex items-center justify-between px-4">
@@ -99,18 +87,11 @@ export function WorkspaceHeader({
           </a>
         )}
 
-        <button
-          onClick={handleDeploy}
-          disabled={isDeploying}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors"
-        >
-          {isDeploying ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Rocket className="h-3.5 w-3.5" />
-          )}
-          Deploy
-        </button>
+        <DeployPopover
+          projectId={projectId}
+          onDeployStateChange={setIsDeploying}
+          onDeployed={setDeployedUrl}
+        />
       </div>
     </header>
   );

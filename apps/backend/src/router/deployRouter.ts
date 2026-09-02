@@ -83,6 +83,58 @@ deployRouter.post("/:projectId", async (req: Request, res: Response) => {
   }
 });
 
+// Check whether a new deployment is required for the project without
+// starting one. Returns inProgress true when a deployment is already queued
+// or being processed.
+deployRouter.get("/:projectId/check", async (req: Request, res: Response) => {
+  try {
+    const projectId = getParam(req, "projectId");
+
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, userId: req.userId! },
+    });
+    if (!project) {
+      res.status(404).json({ message: "Project not found" });
+      return;
+    }
+
+    if (
+      project.deployIngStatus === "QUEUED" ||
+      project.deployIngStatus === "PROCESSING"
+    ) {
+      res.json({
+        projectId,
+        inProgress: true,
+        needsRedeploy: true,
+        deployedUrl: project.deployedUrl ?? undefined,
+      });
+      return;
+    }
+
+    const lastBuiltAt = project.lastBuiltAt;
+    const newConversations = await prisma.conversationHistory.count({
+      where: {
+        projectId,
+        ...(lastBuiltAt ? { createdAT: { gt: lastBuiltAt } } : {}),
+      },
+    });
+
+    const needsRedeploy = !lastBuiltAt || newConversations > 0;
+
+    res.json({
+      projectId,
+      inProgress: false,
+      needsRedeploy,
+      deployedUrl: project.deployedUrl ?? undefined,
+    });
+  } catch (err) {
+    console.error("Deploy check error:", err);
+    if (!res.headersSent) {
+      res.status(500).json({ message: "Failed to check deployment status" });
+    }
+  }
+});
+
 deployRouter.get(
   "/:projectId/:deployId",
   async (req: Request, res: Response) => {

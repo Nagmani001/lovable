@@ -2,15 +2,7 @@
 
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import {
-  Sun,
-  Moon,
-  Rocket,
-  Loader2,
-  Github,
-  Database,
-  HelpCircle,
-} from "lucide-react";
+import { Sun, Moon, Github, Database, HelpCircle } from "lucide-react";
 import { LovableLogo } from "@repo/ui/components/lovable-logo";
 import {
   DropdownMenu,
@@ -21,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/dropdown-menu";
 import { authClient } from "@/lib/auth";
-import { deployProject, pollDeployStatus } from "@/lib/api";
+import { DeployPopover } from "./workspace/deploy-popover";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useAtom, useAtomValue } from "jotai";
@@ -49,32 +41,13 @@ export function Navbar() {
   const [deployedUrl, setDeployedUrl] = useState<string | null>(null);
   const [failedImageSrc, setFailedImageSrc] = useState<string | null>(null);
   const isAgentBusy = useAtomValue(isAgentBusyAtom);
-  const [isDeploying, setIsDeploying] = useAtom(isDeployingAtom);
+  const [, setIsDeploying] = useAtom(isDeployingAtom);
 
   const projectId = useMemo(() => {
     if (!pathname || !pathname.startsWith("/project/")) return null;
     const segments = pathname.split("/").filter(Boolean);
     return segments[1] ?? null;
   }, [pathname]);
-
-  const handleDeploy = async () => {
-    if (!projectId) return;
-    try {
-      setIsDeploying(true);
-      const result = await deployProject(projectId);
-
-      if (result.status === "QUEUED" && result.deployId) {
-        const final = await pollDeployStatus(projectId, result.deployId);
-        setDeployedUrl(final.deployedUrl ?? null);
-      } else {
-        setDeployedUrl(result.deployedUrl ?? null);
-      }
-    } catch (err) {
-      console.error("Deploy failed:", err);
-    } finally {
-      setIsDeploying(false);
-    }
-  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-background/80 backdrop-blur-xl border-b border-border/50">
@@ -156,18 +129,12 @@ export function Navbar() {
                 {deployedUrl}
               </a>
             ) : null}
-            <button
-              onClick={handleDeploy}
-              disabled={isDeploying || isAgentBusy}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 transition-colors"
-            >
-              {isDeploying ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Rocket className="h-3.5 w-3.5" />
-              )}
-              Deploy
-            </button>
+            <DeployPopover
+              projectId={projectId}
+              disabled={isAgentBusy}
+              onDeployStateChange={setIsDeploying}
+              onDeployed={setDeployedUrl}
+            />
           </div>
         ) : null}
         {session ? (
