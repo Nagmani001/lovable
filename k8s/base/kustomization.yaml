@@ -4,6 +4,7 @@ namespace: lovable
 resources:
   - namespace.yaml
   - postgres.yaml
+  - redis.yaml
   - cluster-issuer.yaml
   - certificate.yaml
   - ingress.yaml

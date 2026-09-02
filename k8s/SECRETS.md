@@ -12,6 +12,7 @@ kubectl create secret generic postgres-secret -n lovable \
 kubectl create secret generic backend-secret -n lovable \
   --from-literal=BETTER_AUTH_SECRET='<your-secret>' \
   --from-literal=DATABASE_URL='postgresql://postgres:password@postgres:5432/postgres' \
+  --from-literal=REDIS_URL='redis://redis:6379' \
   --from-literal=RESEND_API_KEY='<your-key>' \
   --from-literal=E2B_API_KEY='<your-key>' \
   --from-literal=OPENROUTER_API_KEY='<your-key>' \
