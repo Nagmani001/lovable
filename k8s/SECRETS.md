@@ -23,6 +23,10 @@ kubectl create secret generic backend-secret -n lovable \
   --from-literal=AWS_ACCESS_KEY_ID='<your-id>' \
   --from-literal=AWS_SECRET_ACCESS_KEY='<your-key>' \
   --from-literal=GCS_SERVICE_ACCOUNT_KEY='{...your service account json...}'
+
+kubectl create secret generic grafana-secret -n lovable \
+  --from-literal=admin-user='admin' \
+  --from-literal=admin-password='<your-password>'
 ```
 
 ## Add a new secret key to an existing secret

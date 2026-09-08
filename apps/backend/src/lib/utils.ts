@@ -7,9 +7,10 @@ import { server } from "..";
 import { Request } from "express";
 import { getQueueClient } from "./redis";
 import { REDIS_QUEUE_NAME } from "@repo/common/data";
+import { logger } from "./logger";
 
 export function shutdown(code = 0) {
-  console.log("Shutting down gracefully...");
+  logger.info("shutting down gracefully");
   server.close(() => {
     process.exit(code);
   });

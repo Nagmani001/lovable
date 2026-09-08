@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { getParam } from "../lib/utils";
 import { prisma } from "@repo/database/client";
 import { getOrchestrator } from "../lib/orchestrator";
+import { logger } from "../lib/logger";
 
 export const sandboxRouter: Router = Router();
 
@@ -33,7 +34,7 @@ sandboxRouter.post(
         sandboxId: sandbox.sandboxId,
       });
     } catch (err) {
-      console.error("Failed to connect to project:", err);
+      logger.error({ err }, "failed to connect to project");
       res.status(500).json({ message: "Failed to connect to project" });
     }
   },
@@ -68,7 +69,7 @@ sandboxRouter.post(
 
       res.json({ ok: true });
     } catch (err) {
-      console.error("Persist error:", err);
+      logger.error({ err }, "persist error");
       res.json({ ok: false });
     }
   },

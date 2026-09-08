@@ -3,6 +3,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 config({
   path: `${path.join(__dirname, "..")}/.env`,
 });
+import client from "@prometheus-io/client";
 import express, { Request, Response } from "express";
 import { toNodeHandler } from "better-auth/node";
 import { dirname } from "path";
@@ -21,8 +22,25 @@ import { preetifyChatRouter } from "./router/preetifyChatRouter";
 import { sandboxRouter } from "./router/sandboxRouter";
 import { deployRouter } from "./router/deployRouter";
 import { Server } from "http";
+import { requestCountMiddleware } from "./lib/monitoring/middleware";
+import { logger } from "./lib/logger";
 
 const app = express();
+const collectDefaultMetrics = client.collectDefaultMetrics;
+collectDefaultMetrics();
+
+app.use((req: Request, res: Response, next: () => void) => {
+  const start = Date.now();
+  res.on("finish", () => {
+    logger.info({
+      method: req.method,
+      url: req.originalUrl,
+      status: res.statusCode,
+      durationMs: Date.now() - start,
+    });
+  });
+  next();
+});
 
 app.use(
   cors({
@@ -36,6 +54,13 @@ app.use(
 
 app.all("/api/auth/{*any}", toNodeHandler(auth));
 app.use(express.json());
+
+app.use(requestCountMiddleware);
+
+app.get("/metrics", async (req: Request, res: Response) => {
+  res.setHeader("Content-Type", client.contentType);
+  res.send(await client.register.metrics());
+});
 
 app.get("/health", (req: Request, res: Response) => {
   res.json({
@@ -62,7 +87,7 @@ async function main() {
   initOrchestrator();
 
   server = app.listen(process.env.PORT, () => {
-    console.log(`server running on port ${process.env.PORT}`);
+    logger.info(`server running on port ${process.env.PORT}`);
   });
 }
 main();
@@ -77,7 +102,7 @@ process.on("SIGTERM", async () => {
 });
 
 process.on("uncaughtException", async (err) => {
-  console.error("uncaught:", err);
+  logger.error({ err }, "uncaught exception");
   await shutdownOrchestrator();
   shutdown(1);
 });

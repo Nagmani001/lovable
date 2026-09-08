@@ -5,6 +5,7 @@ import { getQueueClient } from "../lib/redis";
 import { getOrchestrator } from "../lib/orchestrator";
 import { REDIS_QUEUE_NAME, WORKER_JOB_TYPES } from "@repo/common/data";
 import type { WorkerQueueItem } from "@repo/common/types";
+import { logger } from "../lib/logger";
 
 export const deployRouter: Router = Router();
 
@@ -76,7 +77,7 @@ deployRouter.post("/:projectId", async (req: Request, res: Response) => {
       status: "QUEUED",
     });
   } catch (err) {
-    console.error("Deploy error:", err);
+    logger.error({ err }, "deploy error");
     if (!res.headersSent) {
       res.status(500).json({ message: "Deployment failed" });
     }
@@ -128,7 +129,7 @@ deployRouter.get("/:projectId/check", async (req: Request, res: Response) => {
       deployedUrl: project.deployedUrl ?? undefined,
     });
   } catch (err) {
-    console.error("Deploy check error:", err);
+    logger.error({ err }, "deploy check error");
     if (!res.headersSent) {
       res.status(500).json({ message: "Failed to check deployment status" });
     }
@@ -157,7 +158,7 @@ deployRouter.get(
         deployedUrl: project.deployedUrl ?? undefined,
       });
     } catch (err) {
-      console.error("Deploy status error:", err);
+      logger.error({ err }, "deploy status error");
       res.status(500).json({ message: "Failed to fetch deployment status" });
     }
   },

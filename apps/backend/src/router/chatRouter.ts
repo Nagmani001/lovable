@@ -7,6 +7,7 @@ import { chatMessageSchema } from "@repo/common/zod";
 import { StreamChunk, ConversationMessageInput } from "@repo/common/types";
 import { getOrchestrator } from "../lib/orchestrator";
 import { getObjectStore } from "../lib/storage";
+import { logger } from "../lib/logger";
 
 export const chatRouter: Router = Router();
 
@@ -111,7 +112,7 @@ chatRouter.post("/:projectId/upload", async (req: Request, res: Response) => {
 
     res.json({ imageKey, imageUploadUrl, thumbnailKey, thumbnailUploadUrl });
   } catch (err) {
-    console.error("Upload URL error:", err);
+    logger.error({ err }, "upload url error");
     res.status(500).json({ message: "Failed to create upload URL" });
   }
 });
@@ -216,7 +217,10 @@ chatRouter.post("/:projectId", async (req: Request, res: Response) => {
         try {
           await enqueueConversation(projectId, conversationMessages);
         } catch (enqueueErr) {
-          console.error("Failed to enqueue conversation persist:", enqueueErr);
+          logger.error(
+            { err: enqueueErr },
+            "failed to enqueue conversation persist",
+          );
         }
 
         const sandboxId = getOrchestrator().getSandboxId(projectId);
@@ -228,7 +232,10 @@ chatRouter.post("/:projectId", async (req: Request, res: Response) => {
               sandboxId,
             });
           } catch (thumbErr) {
-            console.error("Failed to enqueue thumbnail generation:", thumbErr);
+            logger.error(
+              { err: thumbErr },
+              "failed to enqueue thumbnail generation",
+            );
           }
         }
       },
@@ -244,12 +251,12 @@ chatRouter.post("/:projectId", async (req: Request, res: Response) => {
           data: { lastSavedAt: new Date() },
         });
       })
-      .catch((err) => console.error("Background persist error:", err));
+      .catch((err) => logger.error({ err }, "background persist error"));
 
     res.write(`event: done\ndata: {}\n\n`);
     res.end();
   } catch (err) {
-    console.error("Chat error:", err);
+    logger.error({ err }, "chat error");
 
     try {
       if (parsed.success) {
@@ -314,7 +321,7 @@ chatRouter.get("/:projectId/image", async (req: Request, res: Response) => {
     res.setHeader("Cache-Control", "private, max-age=86400");
     res.end(data);
   } catch (err) {
-    console.error("Image proxy error:", err);
+    logger.error({ err }, "image proxy error");
     res.status(500).json({ message: "Failed to load image" });
   }
 });
@@ -348,7 +355,7 @@ chatRouter.get("/:projectId/history", async (req: Request, res: Response) => {
 
     res.json({ history });
   } catch (err) {
-    console.error("History error:", err);
+    logger.error({ err }, "history error");
     res.status(500).json({ message: "Failed to get history" });
   }
 });

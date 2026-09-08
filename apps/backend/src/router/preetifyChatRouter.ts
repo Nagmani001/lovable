@@ -4,6 +4,7 @@ import { getParam } from "../lib/utils";
 import { prisma } from "@repo/database/client";
 import { getOrchestrator } from "../lib/orchestrator";
 import { getObjectStore } from "../lib/storage";
+import { logger } from "../lib/logger";
 
 export const preetifyChatRouter: Router = Router();
 
@@ -61,7 +62,7 @@ preetifyChatRouter.post("/", async (req: Request, res: Response) => {
 
     res.json({ prettifiedPrompt });
   } catch (err) {
-    console.error("Prettify error:", err);
+    logger.error({ err }, "prettify error");
     res.status(500).json({ message: "Failed to prettify prompt" });
   }
 });
@@ -100,7 +101,7 @@ preetifyChatRouter.post("/:projectId", async (req: Request, res: Response) => {
 
     res.json({ prettifiedPrompt });
   } catch (err) {
-    console.error("Prettify error:", err);
+    logger.error({ err }, "prettify error");
     res.status(500).json({ message: "Failed to prettify prompt" });
   }
 });

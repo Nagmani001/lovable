@@ -6,6 +6,7 @@ import { createProjectSchema } from "@repo/common/zod";
 import { getQueueClient } from "../lib/redis";
 import { REDIS_QUEUE_NAME, WORKER_JOB_TYPES } from "@repo/common/data";
 import type { WorkerQueueItem } from "@repo/common/types";
+import { logger } from "../lib/logger";
 
 export const projectRouter: Router = Router();
 
@@ -49,7 +50,7 @@ projectRouter.post("/create", async (req: Request, res: Response) => {
       prompt,
     });
   } catch (err) {
-    console.error("Failed to create project:", err);
+    logger.error({ err }, "failed to create project");
     res.status(500).json({ message: "Failed to create project" });
   }
 });
@@ -79,7 +80,7 @@ projectRouter.get("/list", async (req: Request, res: Response) => {
 
     res.json({ projects });
   } catch (err) {
-    console.error("Failed to list projects:", err);
+    logger.error({ err }, "failed to list projects");
     res.status(500).json({ message: "Failed to list projects" });
   }
 });
@@ -103,7 +104,7 @@ projectRouter.get("/:projectId", async (req: Request, res: Response) => {
 
     res.json({ project });
   } catch (err) {
-    console.error("Failed to get project:", err);
+    logger.error({ err }, "failed to get project");
     res.status(500).json({ message: "Failed to get project" });
   }
 });
@@ -128,7 +129,7 @@ projectRouter.delete("/:projectId", async (req: Request, res: Response) => {
 
     res.json({ ok: true });
   } catch (err) {
-    console.error("Delete error:", err);
+    logger.error({ err }, "delete project error");
     res.status(500).json({ message: "Failed to delete project" });
   }
 });

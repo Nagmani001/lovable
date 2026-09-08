@@ -4,6 +4,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@repo/database/client";
 import { sendEmail } from "@repo/email/email";
 import OtpTemplate from "@repo/email/template/OtpTemplate";
+import { logger } from "./logger";
 
 export const auth = betterAuth({
   trustedOrigins: process.env.TRUSTED_ORIGINS
@@ -41,7 +42,7 @@ export const auth = betterAuth({
     emailOTP({
       async sendVerificationOTP({ email, otp, type }) {
         if (type === "sign-in") {
-          console.log("signin");
+          logger.info({ email }, "sign-in otp requested");
         } else if (type === "email-verification") {
           //TODO: Error handling should be done here
           let response = await sendEmail({
@@ -49,9 +50,9 @@ export const auth = betterAuth({
             react: OtpTemplate({ otp }),
             subject: "email-verification Otp",
           });
-          console.log(response);
+          logger.info({ email, response }, "email verification otp sent");
         } else {
-          console.log("password reset");
+          logger.info({ email }, "password reset otp requested");
         }
       },
     }),
