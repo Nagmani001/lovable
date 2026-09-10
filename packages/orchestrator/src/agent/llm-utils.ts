@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
 import type { AgentStatusEvent, StreamChunk } from "@repo/common/types";
 import { ToolExecutor } from "../tools/executor.js";
@@ -7,6 +8,11 @@ const GEMINI_BASE_URL =
   "https://generativelanguage.googleapis.com/v1beta/openai/";
 const MODEL = "gemini-3-flash-preview";
 const MAX_COMPLETION_TOKENS = 8096;
+
+const TRANSCRIBE_MODEL = "gemini-3-flash-preview";
+const TRANSCRIBE_PROMPT =
+  "Transcribe the speech in this audio into plain text. " +
+  "Return only the transcription, without any preamble, quotes, or formatting.";
 
 function createLlmClient(apiKey: string): OpenAI {
   return new OpenAI({
@@ -85,6 +91,63 @@ export async function callLLMWithRetry(
       }
     }
   }
+}
+
+export interface TranscribeAudioInput {
+  data: Buffer;
+  mimeType: string;
+}
+
+export async function transcribeAudioWithRetry(
+  apiKeyString: string,
+  input: TranscribeAudioInput,
+  logPrefix = "",
+): Promise<string> {
+  const keys = apiKeyString
+    .split(",")
+    .map((key) => key.trim())
+    .filter(Boolean);
+
+  if (keys.length === 0) {
+    throw new Error("No LLM API keys configured");
+  }
+
+  const base64 = input.data.toString("base64");
+  let lastError: unknown;
+
+  for (const apiKey of keys) {
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: TRANSCRIBE_MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: TRANSCRIBE_PROMPT },
+              { inlineData: { mimeType: input.mimeType, data: base64 } },
+            ],
+          },
+        ],
+      });
+
+      const text = response.text?.trim();
+      if (!text) {
+        console.log(`${logPrefix}empty transcription`);
+        return "";
+      }
+      return text;
+    } catch (err: any) {
+      if (err?.status === 429) {
+        lastError = err;
+        console.log(`${logPrefix}Rate limited (429), rotating to next key`);
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw lastError;
 }
 
 export interface MiniLoopResult {

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, ArrowUp, Mic, X, Sparkles, Loader2 } from "lucide-react";
+import { Plus, ArrowUp, Mic, X, Check, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "@repo/ui/lib/utils";
 
 interface PromptInputProps {
@@ -15,6 +15,11 @@ interface PromptInputProps {
   onRemoveImage?: () => void;
   onPrettify?: () => void;
   isPrettifying?: boolean;
+  onMicClick?: () => void;
+  isRecording?: boolean;
+  isTranscribing?: boolean;
+  onCancelRecording?: () => void;
+  onConfirmRecording?: () => void;
 }
 
 function PromptInput({
@@ -28,6 +33,11 @@ function PromptInput({
   onRemoveImage,
   onPrettify,
   isPrettifying = false,
+  onMicClick,
+  isRecording = false,
+  isTranscribing = false,
+  onCancelRecording,
+  onConfirmRecording,
 }: PromptInputProps) {
   const hasText = value.trim().length > 0;
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -155,12 +165,44 @@ function PromptInput({
             )}
             Prettify
           </button>
-          <button
-            type="button"
-            className="w-8 h-8 rounded-lg bg-secondary/80 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-          >
-            <Mic size={16} />
-          </button>
+          {isTranscribing ? (
+            <button
+              type="button"
+              disabled
+              className="w-8 h-8 rounded-lg bg-secondary/80 flex items-center justify-center text-muted-foreground cursor-wait"
+              title="Transcribing..."
+            >
+              <Loader2 size={16} className="animate-spin" />
+            </button>
+          ) : isRecording ? (
+            <>
+              <button
+                type="button"
+                onClick={onCancelRecording}
+                className="w-8 h-8 rounded-lg bg-secondary/80 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-secondary transition-colors"
+                title="Stop and discard recording"
+              >
+                <X size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={onConfirmRecording}
+                className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center hover:opacity-80 transition-colors"
+                title="Stop and transcribe"
+              >
+                <Check size={16} />
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={onMicClick}
+              className="w-8 h-8 rounded-lg bg-secondary/80 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              title="Record with your microphone"
+            >
+              <Mic size={16} />
+            </button>
+          )}
           <button
             type="button"
             disabled={!hasText && !attachedImagePreview}

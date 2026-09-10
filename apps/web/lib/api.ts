@@ -129,6 +129,17 @@ export async function prettifyPromptHome(message: string): Promise<string> {
   return res.data.prettifiedPrompt as string;
 }
 
+export async function transcribeAudio(blob: Blob): Promise<string> {
+  const formData = new FormData();
+  formData.append("audio", blob);
+  const res = await axios.post(
+    `${getBackendUrl()}/api/v1/transcribe`,
+    formData,
+    { withCredentials: true },
+  );
+  return res.data.text as string;
+}
+
 export interface ImageUploadUrls {
   imageKey: string;
   imageUploadUrl: string;

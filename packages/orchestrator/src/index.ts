@@ -91,6 +91,13 @@ export class Orchestrator {
     });
   }
 
+  async transcribeAudio(params: {
+    audio: Buffer;
+    mimeType: string;
+  }): Promise<string> {
+    return this.llmManager.transcribeAudio(params);
+  }
+
   async heartbeat(projectId: string): Promise<boolean> {
     return this.sandboxManager.heartbeat(projectId);
   }

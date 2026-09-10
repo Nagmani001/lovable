@@ -7,6 +7,8 @@ import { Loader2 } from "lucide-react";
 import { PromptInput } from "@repo/ui/components/prompt-input";
 import { createProject, prettifyPromptHome } from "@/lib/api";
 import { uploadChatImage } from "@/lib/chat-image";
+import { useVoiceRecorder } from "@/hooks/use-voice-recorder";
+import { toast } from "@repo/ui/lib/toast";
 
 export function PromptSection() {
   const [prompt, setPrompt] = useState("");
@@ -17,6 +19,17 @@ export function PromptSection() {
   const [isCreating, setIsCreating] = useState(false);
   const [isPrettifying, setIsPrettifying] = useState(false);
   const router = useRouter();
+
+  const { isRecording, isTranscribing, start, confirm, cancel } =
+    useVoiceRecorder({
+      onTranscribed: (text) => {
+        setPrompt((prev) => {
+          const trimmed = prev.trim();
+          return trimmed ? `${trimmed} ${text}` : text;
+        });
+      },
+      onError: (message) => toast.error(message),
+    });
 
   // Clean up the object URL when the component unmounts
   useEffect(() => {
@@ -111,6 +124,11 @@ export function PromptSection() {
           onRemoveImage={handleRemoveImage}
           onPrettify={handlePrettify}
           isPrettifying={isPrettifying}
+          onMicClick={start}
+          isRecording={isRecording}
+          isTranscribing={isTranscribing}
+          onCancelRecording={cancel}
+          onConfirmRecording={confirm}
           placeholder="Ask Lovable to create an interface..."
         />
 

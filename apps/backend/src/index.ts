@@ -21,6 +21,7 @@ import { chatRouter } from "./router/chatRouter";
 import { preetifyChatRouter } from "./router/preetifyChatRouter";
 import { sandboxRouter } from "./router/sandboxRouter";
 import { deployRouter } from "./router/deployRouter";
+import { transcribeRouter } from "./router/transcribeRouter";
 import { Server } from "http";
 import { requestCountMiddleware } from "./lib/monitoring/middleware";
 import { logger } from "./lib/logger";
@@ -79,6 +80,7 @@ app.use("/api/v1/chat", authMiddleware, chatRouter);
 app.use("/api/v1/prettify", authMiddleware, preetifyChatRouter);
 app.use("/api/v1/sandbox", authMiddleware, sandboxRouter);
 app.use("/api/v1/deploy", authMiddleware, deployRouter);
+app.use("/api/v1/transcribe", authMiddleware, transcribeRouter);
 
 export let server: Server;
 async function main() {

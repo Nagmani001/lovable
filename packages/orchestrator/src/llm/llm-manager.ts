@@ -7,6 +7,7 @@ import { runAgentLoop } from "../agent/loop.js";
 import {
   callLLMWithRetry,
   createLlmClientRotation,
+  transcribeAudioWithRetry,
 } from "../agent/llm-utils.js";
 
 interface LlmManagerConfig {
@@ -37,6 +38,11 @@ interface HandleUserMessageParams {
 interface PrettifyPromptParams {
   conversationHistory: ChatCompletionMessageParam[];
   message: string;
+}
+
+interface TranscribeAudioParams {
+  audio: Buffer;
+  mimeType: string;
 }
 
 const PRETTIFY_SYSTEM_PROMPT = `You are a prompt-enhancement assistant for an AI app builder. A user will share a raw prompt describing an app or interface they want to build, along with the surrounding conversation for context. Rewrite their latest prompt into a clear, detailed, well-structured version that keeps their original intent.
@@ -175,5 +181,13 @@ export class LlmManager {
     }
 
     return prettified;
+  }
+
+  async transcribeAudio(params: TranscribeAudioParams): Promise<string> {
+    return transcribeAudioWithRetry(
+      this.openRouterApiKey,
+      { data: params.audio, mimeType: params.mimeType },
+      "[transcribe] ",
+    );
   }
 }
