@@ -4,3 +4,4 @@ namespace: lovable
 resources:
   - configmap.yaml
   - deployment.yaml
+  - rbac.yaml
