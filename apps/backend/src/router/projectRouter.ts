@@ -2,7 +2,7 @@ import { prisma } from "@repo/database/client";
 import { Router, Request, Response } from "express";
 import { getOrchestrator } from "../lib/orchestrator";
 import { getParam } from "../lib/utils";
-import { createProjectSchema } from "@repo/common/zod";
+import { createProjectSchema, updateProjectSchema } from "@repo/common/zod";
 import { getQueueClient } from "../lib/redis";
 import { REDIS_QUEUE_NAME, WORKER_JOB_TYPES } from "@repo/common/data";
 import type { WorkerQueueItem } from "@repo/common/types";
@@ -61,9 +61,10 @@ projectRouter.get("/list", async (req: Request, res: Response) => {
     const projects = await prisma.project.findMany({
       where: {
         userId: req.userId!,
+        isDeleted: false,
         NOT: { status: "DELETED" },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
       select: {
         id: true,
         title: true,
@@ -72,6 +73,7 @@ projectRouter.get("/list", async (req: Request, res: Response) => {
         status: true,
         deployedUrl: true,
         thumbnailKey: true,
+        isPinned: true,
         lastSavedAt: true,
         createdAt: true,
         updatedAt: true,
@@ -94,6 +96,8 @@ projectRouter.get("/:projectId", async (req: Request, res: Response) => {
       where: {
         id: projectId,
         userId: req.userId!,
+        isDeleted: false,
+        NOT: { status: "DELETED" },
       },
     });
 
@@ -106,6 +110,55 @@ projectRouter.get("/:projectId", async (req: Request, res: Response) => {
   } catch (err) {
     logger.error({ err }, "failed to get project");
     res.status(500).json({ message: "Failed to get project" });
+  }
+});
+
+// update a project (rename or pin/unpin)
+projectRouter.patch("/:projectId", async (req: Request, res: Response) => {
+  try {
+    const projectId = getParam(req, "projectId");
+
+    const parsed = updateProjectSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ message: "Invalid request", errors: parsed.error.issues });
+      return;
+    }
+
+    const existing = await prisma.project.findFirst({
+      where: {
+        id: projectId,
+        userId: req.userId!,
+        isDeleted: false,
+        NOT: { status: "DELETED" },
+      },
+    });
+    if (!existing) {
+      res.status(404).json({ message: "Project not found" });
+      return;
+    }
+
+    const data: { title?: string; isPinned?: boolean } = {};
+    if (parsed.data.title !== undefined) data.title = parsed.data.title;
+    if (parsed.data.isPinned !== undefined) {
+      data.isPinned = parsed.data.isPinned;
+    }
+
+    const project = await prisma.project.update({
+      where: { id: projectId },
+      data,
+      select: {
+        id: true,
+        title: true,
+        isPinned: true,
+      },
+    });
+
+    res.json({ project });
+  } catch (err) {
+    logger.error({ err }, "failed to update project");
+    res.status(500).json({ message: "Failed to update project" });
   }
 });
 
@@ -124,7 +177,7 @@ projectRouter.delete("/:projectId", async (req: Request, res: Response) => {
 
     await prisma.project.update({
       where: { id: projectId },
-      data: { status: "DELETED" },
+      data: { isDeleted: true, status: "DELETED" },
     });
 
     res.json({ ok: true });

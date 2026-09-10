@@ -90,6 +90,8 @@ model Project {
   sandboxTemplateId     String?
   s3Prefix              String?
   thumbnailKey          String?
+  isPinned              Boolean                @default(false)
+  isDeleted             Boolean                @default(false)
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   conversationHistories ConversationHistory[]

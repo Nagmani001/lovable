@@ -48,7 +48,7 @@ app.use(
     origin: process.env.CORS_ORIGINS
       ? process.env.CORS_ORIGINS.split(",")
       : ["http://localhost:5000"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
   }),
 );

@@ -46,6 +46,24 @@ export async function getProject(projectId: string) {
   }
 }
 
+export async function updateProject(
+  projectId: string,
+  data: { title?: string; isPinned?: boolean },
+) {
+  try {
+    const res = await axios.patch(
+      `${getBackendUrl()}/api/v1/project/${projectId}`,
+      data,
+      {
+        withCredentials: true,
+      },
+    );
+    return res.data;
+  } catch (err) {
+    throw new Error("Failed to update project");
+  }
+}
+
 export async function deleteProject(projectId: string) {
   try {
     const res = await axios.delete(

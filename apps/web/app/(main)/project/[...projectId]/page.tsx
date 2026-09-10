@@ -8,6 +8,7 @@ import { useChat, ChatImageAttachment } from "@/hooks/use-chat";
 import { useHeartbeat } from "@/hooks/use-heartbeat";
 import { ChatPanel } from "@/components/workspace/chat-panel";
 import { WorkspacePanel } from "@/components/workspace/workspace-panel";
+import { ProjectSidebar } from "@/components/workspace/project-sidebar";
 import type { UploadedImageKeys } from "@/lib/chat-image";
 import { useAtom, useAtomValue } from "jotai";
 import { isAgentBusyAtom, isDeployingAtom } from "@/atom";
@@ -122,6 +123,7 @@ export default function ProjectWorkspacePage({
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)] min-h-0 bg-background">
       <div className="flex flex-1 min-h-0 overflow-hidden">
+        <ProjectSidebar activeProjectId={project} />
         <div className="w-[420px] min-w-[320px] max-w-[600px] border-r border-border flex flex-col min-h-0">
           <ChatPanel
             projectId={project}

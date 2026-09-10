@@ -4,6 +4,15 @@ export const createProjectSchema = z.object({
   prompt: z.string(),
 });
 
+export const updateProjectSchema = z
+  .object({
+    title: z.string().trim().min(1).max(200).optional(),
+    isPinned: z.boolean().optional(),
+  })
+  .refine((data) => data.title !== undefined || data.isPinned !== undefined, {
+    message: "At least one field to update is required",
+  });
+
 export const chatMessageSchema = z
   .object({
     message: z.string().optional(),
