@@ -32,8 +32,9 @@ function MessageImage({
   onOpen: () => void;
 }) {
   const thumbnailUrl = useChatImage(projectId, msg.thumbnailKey);
+  const [failed, setFailed] = useState(false);
 
-  if (!msg.thumbnailKey || !thumbnailUrl) return null;
+  if (!msg.thumbnailKey || !thumbnailUrl || failed) return null;
 
   return (
     <button
@@ -45,8 +46,9 @@ function MessageImage({
       <img
         src={thumbnailUrl}
         alt="Attached image"
-        className="max-h-48 max-w-full object-cover"
+        className="max-h-48 w-full object-cover"
         loading="lazy"
+        onError={() => setFailed(true)}
       />
     </button>
   );
@@ -72,6 +74,7 @@ export function ChatPanel({
   const [viewingMessage, setViewingMessage] = useState<ChatMessage | null>(
     null,
   );
+  const [previewFailed, setPreviewFailed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -139,6 +142,7 @@ export function ChatPanel({
     if (!file.type.startsWith("image/")) return;
 
     setAttachment(file);
+    setPreviewFailed(false);
     setFilePreview((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return URL.createObjectURL(file);
@@ -173,6 +177,7 @@ export function ChatPanel({
 
   const clearAttachment = () => {
     setAttachment(null);
+    setPreviewFailed(false);
     if (filePreview) {
       URL.revokeObjectURL(filePreview);
     }
@@ -379,21 +384,30 @@ export function ChatPanel({
       <div className="border-t border-border p-3">
         {attachment && (
           <div className="mb-2 flex items-center gap-2 rounded-lg bg-muted/50 border border-border p-2">
-            {previewUrl && (
+            {previewFailed ? (
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded bg-background border border-border text-muted-foreground">
+                <ImagePlus className="h-5 w-5" />
+              </div>
+            ) : previewUrl ? (
               <img
                 src={previewUrl}
                 alt="Selected"
-                className="h-12 w-12 rounded object-cover"
+                className="h-12 w-12 flex-shrink-0 rounded object-cover border border-border"
+                onError={() => setPreviewFailed(true)}
               />
+            ) : (
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded bg-background border border-border text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
+              </div>
             )}
-            <span className="flex-1 truncate text-xs text-muted-foreground">
+            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
               {isKeysAttachment(attachment)
                 ? "Attached image"
                 : attachment.name}
             </span>
             <button
               onClick={clearAttachment}
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="flex-shrink-0 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               title="Remove image"
             >
               <X className="h-4 w-4" />
@@ -401,7 +415,7 @@ export function ChatPanel({
           </div>
         )}
 
-        <div className="flex items-end gap-2 bg-muted/50 rounded-lg border border-border px-3 py-2">
+        <div className="flex items-end gap-2 @container bg-muted/50 rounded-lg border border-border px-2.5 py-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -411,7 +425,7 @@ export function ChatPanel({
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
+            className="flex-shrink-0 p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             title="Attach an image"
           >
             <ImagePlus className="h-4 w-4" />
@@ -424,7 +438,7 @@ export function ChatPanel({
             onPaste={handlePaste}
             placeholder="Describe what you want to build..."
             rows={1}
-            className="flex-1 bg-transparent resize-none outline-none text-sm min-h-[36px] max-h-[200px] py-1.5"
+            className="min-w-0 flex-1 resize-none overflow-y-auto bg-transparent text-sm outline-none min-h-[36px] max-h-[200px] py-1.5"
           />
           <button
             onClick={handlePrettify}
@@ -443,7 +457,7 @@ export function ChatPanel({
             ) : (
               <Sparkles className="h-3.5 w-3.5" />
             )}
-            Prettify
+            <span className="hidden @min-[340px]:inline">Prettify</span>
           </button>
           <button
             onClick={handleSubmit}
@@ -488,14 +502,16 @@ function FullImage({
   message: ChatMessage | null;
 }) {
   const fullUrl = useChatImage(projectId, message?.imageKey);
+  const [failed, setFailed] = useState(false);
 
-  if (!message?.imageKey || !fullUrl) return null;
+  if (!message?.imageKey || !fullUrl || failed) return null;
 
   return (
     <img
       src={fullUrl}
       alt="Full size attachment"
       className="mx-auto max-h-[70vh] w-auto rounded-lg"
+      onError={() => setFailed(true)}
     />
   );
 }

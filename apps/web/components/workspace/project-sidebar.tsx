@@ -55,7 +55,7 @@ export function ProjectSidebar({
   activeProjectId: string;
 }) {
   const router = useRouter();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [projects, setProjects] = useState<SidebarProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
