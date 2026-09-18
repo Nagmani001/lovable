@@ -8,13 +8,43 @@ metadata:
 data:
   datasources.yaml: |
     apiVersion: 1
+    deleteDatasources:
+      - name: Prometheus
+        orgId: 1
+      - name: Loki
+        orgId: 1
     datasources:
       - name: Prometheus
+        uid: prometheus
+        orgId: 1
         type: prometheus
         access: proxy
         url: http://prometheus:9090
         isDefault: true
+        editable: false
       - name: Loki
+        uid: loki
+        orgId: 1
         type: loki
         access: proxy
         url: http://loki:3100
+        editable: false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-providers
+  namespace: lovable
+  labels:
+    app: grafana
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: Lovable Dashboards
+        type: file
+        disableDeletion: false
+        allowUiUpdates: false
+        updateIntervalSeconds: 10
+        options:
+          path: /etc/grafana/provisioned-dashboards

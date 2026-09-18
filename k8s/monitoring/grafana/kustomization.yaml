@@ -6,3 +6,11 @@ resources:
   - deployment.yaml
   - certificate.yaml
   - ingress.yaml
+
+configMapGenerator:
+  - name: grafana-dashboards
+    files:
+      - dashboards/http-backend.json
+      - dashboards/overview.json
+      - dashboards/postgres.json
+      - dashboards/worker.json
