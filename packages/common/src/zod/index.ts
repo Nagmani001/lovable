@@ -13,6 +13,18 @@ export const updateProjectSchema = z
     message: "At least one field to update is required",
   });
 
+export const listProjectsQuerySchema = z.object({
+  cursor: z.string().uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(15),
+  pinned: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => {
+      if (value === undefined) return undefined;
+      return value === "true";
+    }),
+});
+
 export const chatMessageSchema = z
   .object({
     message: z.string().optional(),

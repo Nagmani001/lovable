@@ -2,7 +2,11 @@ import { prisma } from "@repo/database/client";
 import { Router, Request, Response } from "express";
 import { getOrchestrator } from "../lib/orchestrator";
 import { getParam } from "../lib/utils";
-import { createProjectSchema, updateProjectSchema } from "@repo/common/zod";
+import {
+  createProjectSchema,
+  listProjectsQuerySchema,
+  updateProjectSchema,
+} from "@repo/common/zod";
 import { getQueueClient } from "../lib/redis";
 import { REDIS_QUEUE_NAME, WORKER_JOB_TYPES } from "@repo/common/data";
 import type { WorkerQueueItem } from "@repo/common/types";
@@ -55,16 +59,31 @@ projectRouter.post("/create", async (req: Request, res: Response) => {
   }
 });
 
-// list all the projects  , should have cursor pagination
+// list projects with cursor pagination
 projectRouter.get("/list", async (req: Request, res: Response) => {
   try {
+    const parsed = listProjectsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ message: "Invalid request", errors: parsed.error.issues });
+      return;
+    }
+
+    const { cursor, limit, pinned } = parsed.data;
     const projects = await prisma.project.findMany({
       where: {
         userId: req.userId!,
         isDeleted: false,
         NOT: { status: "DELETED" },
+        ...(pinned !== undefined ? { isPinned: pinned } : {}),
       },
-      orderBy: [{ isPinned: "desc" }, { createdAt: "desc" }],
+      orderBy:
+        pinned !== undefined
+          ? [{ createdAt: "desc" }, { id: "desc" }]
+          : [{ isPinned: "desc" }, { createdAt: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       select: {
         id: true,
         title: true,
@@ -79,8 +98,14 @@ projectRouter.get("/list", async (req: Request, res: Response) => {
         updatedAt: true,
       },
     });
+    const hasMore = projects.length > limit;
+    const page = hasMore ? projects.slice(0, limit) : projects;
 
-    res.json({ projects });
+    res.json({
+      projects: page,
+      nextCursor: hasMore ? page[page.length - 1]?.id : null,
+      hasMore,
+    });
   } catch (err) {
     logger.error({ err }, "failed to list projects");
     res.status(500).json({ message: "Failed to list projects" });

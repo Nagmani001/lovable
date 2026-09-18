@@ -21,10 +21,21 @@ export async function createProject(prompt: string) {
   }
 }
 
-export async function listProjects() {
+interface ListProjectsOptions {
+  cursor?: string | null;
+  limit?: number;
+  pinned?: boolean;
+}
+
+export async function listProjects(options: ListProjectsOptions = {}) {
   try {
     const res = await axios.get(`${getBackendUrl()}/api/v1/project/list`, {
       withCredentials: true,
+      params: {
+        cursor: options.cursor || undefined,
+        limit: options.limit,
+        pinned: options.pinned,
+      },
     });
     return res.data;
   } catch (err) {

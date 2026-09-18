@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type UIEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -44,6 +44,7 @@ interface SidebarProject {
 
 const EXPANDED_WIDTH = 264;
 const COLLAPSED_WIDTH = 44;
+const SIDEBAR_PAGE_SIZE = 30;
 
 function projectName(project: SidebarProject): string {
   return project.title?.trim() || "Untitled project";
@@ -58,6 +59,9 @@ export function ProjectSidebar({
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [projects, setProjects] = useState<SidebarProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
 
   const [renameTarget, setRenameTarget] = useState<SidebarProject | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -68,12 +72,24 @@ export function ProjectSidebar({
 
   useEffect(() => {
     let cancelled = false;
-    listProjects()
-      .then(({ projects }) => {
-        if (!cancelled) setProjects(projects);
+    setIsLoading(true);
+    setProjects([]);
+    setNextCursor(null);
+    setHasMore(true);
+    setIsLoadingMore(false);
+
+    listProjects({ limit: SIDEBAR_PAGE_SIZE })
+      .then((data) => {
+        if (cancelled) return;
+        setProjects(data.projects);
+        setNextCursor(data.nextCursor);
+        setHasMore(data.hasMore);
       })
       .catch(() => {
-        if (!cancelled) setProjects([]);
+        if (!cancelled) {
+          setProjects([]);
+          setHasMore(false);
+        }
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -83,6 +99,41 @@ export function ProjectSidebar({
     };
     // Refresh when switching projects so renames/pins are reflected.
   }, [activeProjectId]);
+
+  const loadMore = async () => {
+    if (isLoading || isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const data = await listProjects({
+        cursor: nextCursor,
+        limit: SIDEBAR_PAGE_SIZE,
+      });
+      setProjects((prev) => {
+        const existingIds = new Set(prev.map((project) => project.id));
+        const nextProjects = data.projects.filter(
+          (project: SidebarProject) => !existingIds.has(project.id),
+        );
+        return [...prev, ...nextProjects];
+      });
+      setNextCursor(data.nextCursor);
+      setHasMore(data.hasMore);
+    } catch {
+      toast.error("Failed to load more projects");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const handleScroll = (event: UIEvent<HTMLDivElement>) => {
+    const target = event.currentTarget;
+    const distanceFromBottom =
+      target.scrollHeight - target.scrollTop - target.clientHeight;
+
+    if (distanceFromBottom < 80) {
+      void loadMore();
+    }
+  };
 
   const navigate = (projectId: string) => {
     router.push(`/project/${projectId}`);
@@ -198,7 +249,7 @@ export function ProjectSidebar({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -231,6 +282,11 @@ export function ProjectSidebar({
                     <p className="text-xs text-muted-foreground px-2 py-4 text-center">
                       No projects yet
                     </p>
+                  )}
+                  {isLoadingMore && (
+                    <div className="flex items-center justify-center py-3">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
                   )}
                 </div>
               )}
