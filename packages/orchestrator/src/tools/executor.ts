@@ -78,6 +78,7 @@ export class ToolExecutor {
       case "lov-write": {
         const filePath = this.resolvePath(args.file_path as string);
         let content = args.content as string;
+        content = this.normalizeFileContent(content);
 
         const dir = filePath.substring(0, filePath.lastIndexOf("/"));
         await this.sandbox.commands.run(`mkdir -p "${dir}"`);
@@ -211,15 +212,20 @@ export class ToolExecutor {
 
       case "lov-search-files": {
         const query = args.query as string;
-        const includePattern = args.include_pattern as string;
-        const excludePattern = args.exclude_pattern as string | undefined;
+        const includePattern = this.toGrepIncludePattern(
+          args.include_pattern as string,
+        );
+        const excludePattern = args.exclude_pattern
+          ? this.toGrepIncludePattern(args.exclude_pattern as string)
+          : undefined;
         const caseSensitive = args.case_sensitive as boolean | undefined;
 
-        let cmd = `cd ${this.projectBasePath} && grep -rn`;
+        let cmd = `cd "${this.projectBasePath}" && grep -rn`;
         if (!caseSensitive) cmd += "i";
-        cmd += ` "${query}" --include="${includePattern}"`;
-        if (excludePattern) cmd += ` --exclude="${excludePattern}"`;
-        cmd += " . 2>/dev/null || true";
+        cmd += ` --include=${this.shellQuote(includePattern)}`;
+        if (excludePattern)
+          cmd += ` --exclude=${this.shellQuote(excludePattern)}`;
+        cmd += ` ${this.shellQuote(query)} . 2>/dev/null || true`;
 
         const result = await this.sandbox.commands.run(cmd, {
           timeoutMs: 15_000,
@@ -348,6 +354,11 @@ export class ToolExecutor {
         SEARCH_WINDOW,
       );
       if (start !== -1) {
+        const hintLineCount = hintLast - hintFirst + 1;
+        if (hintLineCount > searchLines.length && start === hintFirst) {
+          return { actualFirst: hintFirst, actualLast: hintLast };
+        }
+
         return {
           actualFirst: start,
           actualLast: start + searchLines.length - 1,
@@ -388,6 +399,19 @@ export class ToolExecutor {
     }
 
     return { actualFirst, actualLast };
+  }
+
+  private normalizeFileContent(content: string): string {
+    return content.replace(/\\n/g, "\n");
+  }
+
+  private toGrepIncludePattern(pattern: string): string {
+    if (pattern.startsWith("**/")) return pattern.slice(3);
+    return pattern;
+  }
+
+  private shellQuote(value: string): string {
+    return `'${value.replace(/'/g, `'"'"'`)}'`;
   }
 
   private findBlockStart(

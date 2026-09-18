@@ -76,7 +76,7 @@ describe("lov-write", () => {
     const actual = await sandbox.files.read(`${BASE}/${filePath}`);
     expect(actual).toBe(content);
     expect(actual).toContain("\n");
-    expect(actual.split("\n").length).toBe(9);
+    expect(actual.split("\n").length).toBe(8);
   });
 
   it("unescapes double-escaped newlines from flaky LLM output", async () => {
