@@ -9,9 +9,8 @@ import { listProjects } from "@/lib/api";
 import { useChatImage } from "@/hooks/use-chat-image";
 
 const tabs = [
-  { id: "recent", label: "Recently viewed" },
+  { id: "pinned", label: "Pinned projects" },
   { id: "projects", label: "My projects" },
-  { id: "templates", label: "Templates" },
 ];
 
 interface Project {
@@ -21,6 +20,7 @@ interface Project {
   createdAt: string;
   initialPrompt: string;
   thumbnailKey?: string | null;
+  isPinned: boolean;
 }
 
 const formatDate = (dateStr: string) => {
@@ -72,9 +72,14 @@ function ProjectCardItem({
 }
 
 export function ProjectsBrowser() {
-  const [activeTab, setActiveTab] = useState("recent");
+  const [activeTab, setActiveTab] = useState("projects");
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const visibleProjects =
+    activeTab === "pinned"
+      ? projects.filter((project) => project.isPinned)
+      : projects;
 
   useEffect(() => {
     listProjects()
@@ -102,7 +107,10 @@ export function ProjectsBrowser() {
               </button>
             ))}
           </div>
-          <button className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+          <button
+            onClick={() => setActiveTab("projects")}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          >
             Browse all
             <ArrowRight size={14} />
           </button>
@@ -114,13 +122,17 @@ export function ProjectsBrowser() {
               <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />
             ))}
           </div>
-        ) : projects.length === 0 ? (
+        ) : visibleProjects.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <p>No projects yet. Create one above!</p>
+            <p>
+              {activeTab === "pinned"
+                ? "No pinned projects yet."
+                : "No projects yet. Create one above!"}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            {projects.map((project, i) => (
+            {visibleProjects.map((project, i) => (
               <ProjectCardItem key={project.id} project={project} index={i} />
             ))}
           </div>
